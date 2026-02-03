@@ -1,0 +1,38 @@
+{
+  "name": "full-stack-ai-rs-template",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "modern dev",
+    "dev:mock": "tsx mock/mock-server.ts",
+    "build": "modern build",
+    "serve": "modern serve",
+    "start": "modern serve",
+    "test": "rstest --project node",
+    "test:browser": "rstest --project browser",
+    "test:all": "rstest --project node && rstest --project browser",
+    "test:watch": "rstest --watch",
+    "test:coverage": "rstest --coverage",
+    "test:browser:install": "npx playwright install chromium"
+  },
+  "dependencies": {
+    "@modern-js/runtime": "3.0.0-alpha.2",
+    "openai": "^6.17.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@modern-js/app-tools": "3.0.0-alpha.2",
+    "@modern-js/plugin-bff": "3.0.0-alpha.2",
+    "@playwright/test": "^1.50.2",
+    "@rsbuild/plugin-react": "^1.4.5",
+    "@rstest/browser": "^0.8.1",
+    "@rstest/browser-react": "^0.8.1",
+    "@rstest/core": "^0.8.1",
+    "@types/node": "^25.1.0",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.3"
+  }
+}
