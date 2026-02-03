@@ -17,12 +17,14 @@ const DEFAULT_PROMPT =
   'Analyze the following normalized numeric data and provide a concise summary: -1.22, 0, 1.22';
 
 type Message = { role: 'user' | 'assistant'; content: string };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ApiPayload = any;
 
 const Page: React.FC = () => {
   const [status, setStatus] = useState<string>('idle');
   const [prompt, setPrompt] = useState<string>(DEFAULT_PROMPT);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [payload, setPayload] = useState<unknown>(null);
+  const [payload, setPayload] = useState<ApiPayload>(null);
 
   const runInference = async () => {
     if (!prompt.trim()) return;
@@ -82,7 +84,7 @@ const Page: React.FC = () => {
   return (
     <main style={{ fontFamily: 'system-ui, sans-serif', padding: '2rem' }}>
       <h1>Full-Stack AI RS Template</h1>
-      <p>Modern.js + Rspack + Rstest + OpenRouter (Grok)</p>
+      <p>Rsbuild + Hono + React Router + Rstest + OpenRouter (Grok)</p>
 
       <section style={{ marginBottom: '2rem' }}>
         <h2>Counter Demo</h2>

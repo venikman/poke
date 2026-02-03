@@ -5,7 +5,7 @@
  * Run with: npm run dev:mock
  * Then use exactly like the real server at http://localhost:8080
  *
- * The mock server proxies to Modern.js dev server for static assets/SSR,
+ * The mock server proxies to Rsbuild dev server for static assets,
  * but intercepts /api/v1/chat/* endpoints with mock responses.
  */
 import * as http from 'node:http';
@@ -16,7 +16,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MOCK_PORT = parseInt(process.env.MOCK_PORT ?? '8080', 10);
-const MODERN_PORT = parseInt(process.env.MODERN_PORT ?? '8081', 10);
+const RSBUILD_PORT = parseInt(process.env.RSBUILD_PORT ?? '5173', 10);
 const MOCK_DELAY_MS = parseInt(process.env.MOCK_DELAY_MS ?? '500', 10);
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -152,7 +152,7 @@ const proxyRequest = (
 // Mock Server
 // ─────────────────────────────────────────────────────────────────────────────
 
-const startMockServer = (modernPort: number) => {
+const startMockServer = (rsbuildPort: number) => {
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', `http://localhost:${MOCK_PORT}`);
     const path = url.pathname;
@@ -234,8 +234,8 @@ const startMockServer = (modernPort: number) => {
       return;
     }
 
-    // Proxy everything else to Modern.js dev server
-    proxyRequest(req, res, modernPort);
+    // Proxy everything else to Rsbuild dev server
+    proxyRequest(req, res, rsbuildPort);
   });
 
   server.listen(MOCK_PORT, () => {
@@ -244,14 +244,14 @@ const startMockServer = (modernPort: number) => {
 ║                    🧪 MOCK DEV SERVER                        ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Mock server:    http://localhost:${String(MOCK_PORT).padEnd(27)}║
-║  Modern.js:      http://localhost:${String(modernPort).padEnd(27)}║
+║  Rsbuild:        http://localhost:${String(rsbuildPort).padEnd(27)}║
 ║  Mock delay:     ${String(MOCK_DELAY_MS + 'ms').padEnd(43)}║
 ║                                                              ║
 ║  Intercepted endpoints:                                      ║
 ║    GET  /api/v1/chat/health       Mock health check          ║
 ║    POST /api/v1/chat/completions  Mock AI completions        ║
 ║                                                              ║
-║  All other requests proxied to Modern.js dev server.         ║
+║  All other requests proxied to Rsbuild dev server.           ║
 ║                                                              ║
 ║  To use real AI: npm run dev (with GROK_KEY set)             ║
 ╚══════════════════════════════════════════════════════════════╝
@@ -262,7 +262,7 @@ const startMockServer = (modernPort: number) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Start Modern.js Dev Server + Mock Server
+// Start Rsbuild Dev Server + Mock Server
 // ─────────────────────────────────────────────────────────────────────────────
 
 const waitForServer = async (port: number, maxAttempts = 60, delayMs = 500): Promise<void> => {
@@ -293,55 +293,54 @@ const waitForServer = async (port: number, maxAttempts = 60, delayMs = 500): Pro
 };
 
 const main = async () => {
-  console.log('[Mock] Starting Modern.js dev server on port', MODERN_PORT);
+  console.log('[Mock] Starting Rsbuild dev server on port', RSBUILD_PORT);
 
-  // Start Modern.js dev server on a different port
-  const modernProcess: ChildProcess = spawn('npm', ['run', 'dev'], {
-    env: { ...process.env, PORT: String(MODERN_PORT) },
+  // Start Rsbuild dev server (frontend only, no API proxy needed - we handle API)
+  const rsbuildProcess: ChildProcess = spawn('npx', ['rsbuild', 'dev', '--port', String(RSBUILD_PORT)], {
+    env: { ...process.env },
     stdio: ['ignore', 'pipe', 'pipe'],
-    shell: true,
   });
 
-  modernProcess.stdout?.on('data', (data) => {
+  rsbuildProcess.stdout?.on('data', (data) => {
     const output = data.toString();
     // Filter out some noise, show important messages
-    if (output.includes('ready') || output.includes('error') || output.includes('Local:')) {
-      process.stdout.write(`[Modern.js] ${output}`);
+    if (output.includes('ready') || output.includes('error') || output.includes('http://')) {
+      process.stdout.write(`[Rsbuild] ${output}`);
     }
   });
 
-  modernProcess.stderr?.on('data', (data) => {
-    process.stderr.write(`[Modern.js] ${data}`);
+  rsbuildProcess.stderr?.on('data', (data) => {
+    process.stderr.write(`[Rsbuild] ${data}`);
   });
 
-  modernProcess.on('exit', (code) => {
-    console.log(`[Modern.js] Process exited with code ${code}`);
+  rsbuildProcess.on('exit', (code) => {
+    console.log(`[Rsbuild] Process exited with code ${code}`);
     process.exit(code ?? 1);
   });
 
   // Handle shutdown
   const shutdown = () => {
     console.log('\n[Mock] Shutting down...');
-    modernProcess.kill('SIGTERM');
+    rsbuildProcess.kill('SIGTERM');
     process.exit(0);
   };
 
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
 
-  // Wait for Modern.js to be ready
-  console.log('[Mock] Waiting for Modern.js dev server to be ready...');
+  // Wait for Rsbuild to be ready
+  console.log('[Mock] Waiting for Rsbuild dev server to be ready...');
   try {
-    await waitForServer(MODERN_PORT);
-    console.log('[Mock] Modern.js dev server is ready');
+    await waitForServer(RSBUILD_PORT);
+    console.log('[Mock] Rsbuild dev server is ready');
   } catch (error) {
-    console.error('[Mock] Failed to start Modern.js dev server:', error);
-    modernProcess.kill('SIGTERM');
+    console.error('[Mock] Failed to start Rsbuild dev server:', error);
+    rsbuildProcess.kill('SIGTERM');
     process.exit(1);
   }
 
   // Start mock server
-  startMockServer(MODERN_PORT);
+  startMockServer(RSBUILD_PORT);
 };
 
 main().catch((error) => {

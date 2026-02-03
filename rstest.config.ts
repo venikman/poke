@@ -12,9 +12,9 @@ export default defineConfig({
       include: ['src/**/*.browser.test.tsx'],
       resolve: {
         alias: {
-          '@': path.resolve(__dirname, 'src'),
-          '@shared': path.resolve(__dirname, 'shared'),
-          '@api': path.resolve(__dirname, 'api'),
+          '@': path.resolve(import.meta.dirname, 'src'),
+          '@shared': path.resolve(import.meta.dirname, 'shared'),
+          '@server': path.resolve(import.meta.dirname, 'server'),
         },
       },
       plugins: [pluginReact()],
@@ -29,7 +29,7 @@ export default defineConfig({
       name: 'node',
       globals: true,
       testEnvironment: 'node',
-      include: ['api/lambda/*.test.ts'],
+      include: ['server/**/*.test.ts'],
     },
   ],
 });

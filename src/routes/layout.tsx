@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet } from '@modern-js/runtime/router';
+import { Outlet } from 'react-router';
 
 const Layout: React.FC = () => {
   return <Outlet />;
