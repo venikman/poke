@@ -20,7 +20,7 @@
     "lint:fix": "rslint --fix src server mock",
     "check": "npm run lint && tsc --noEmit",
     "likec4": "likec4 serve likec4",
-    "likec4:build": "likec4 build likec4 -o likec4/dist --base /architecture/"
+    "likec4:build": "likec4 build likec4 -o likec4/dist --base ${LIKEC4_BASE:-/architecture/}"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.0",
