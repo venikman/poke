@@ -1,20 +1,24 @@
 /**
- * Mock Server for local development without real AI calls (Bun runtime).
+ * Mock Server for local development without real AI calls (Node.js runtime).
  *
- * Run with: bun run dev:mock
+ * Run with: npm run dev:mock
  * Then use exactly like the real server at http://localhost:8080
  *
  * The mock server proxies to Rsbuild dev server for static assets,
  * but intercepts /api/v1/chat/* endpoints with mock responses.
  */
 
+import { serve } from '@hono/node-server';
+import { spawn, type ChildProcess } from 'child_process';
+import { setTimeout as sleep } from 'timers/promises';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Configuration
 // ─────────────────────────────────────────────────────────────────────────────
 
-const MOCK_PORT = parseInt(Bun.env.MOCK_PORT ?? '8080', 10);
-const RSBUILD_PORT = parseInt(Bun.env.RSBUILD_PORT ?? '5173', 10);
-const MOCK_DELAY_MS = parseInt(Bun.env.MOCK_DELAY_MS ?? '500', 10);
+const MOCK_PORT = parseInt(process.env.MOCK_PORT ?? '8080', 10);
+const RSBUILD_PORT = parseInt(process.env.RSBUILD_PORT ?? '5173', 10);
+const MOCK_DELAY_MS = parseInt(process.env.MOCK_DELAY_MS ?? '500', 10);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock Response Generators
@@ -62,7 +66,7 @@ I received your message: "${lastUserMsg?.content ?? '(empty)'}"
 
 This is a mock response because the server is running in mock mode. To use real AI:
 1. Set the \`GROK_KEY\` environment variable
-2. Run \`bun run dev\` instead of \`bun run dev:mock\`
+2. Run \`npm run dev\` instead of \`npm run dev:mock\`
 
 *Note: This is a mock response for local development.*`;
   }
@@ -138,7 +142,7 @@ const handleMockRequest = async (req: Request): Promise<Response> => {
 
         // Log the incoming request
         console.log('\n┌─────────────────────────────────────────────────────────────');
-        console.log('│ 📥 INCOMING REQUEST');
+        console.log('│ INCOMING REQUEST');
         console.log('├─────────────────────────────────────────────────────────────');
         console.log('│ Model:', body.model ?? '(default)');
         console.log('│ Temperature:', body.temperature ?? '(default)');
@@ -152,7 +156,7 @@ const handleMockRequest = async (req: Request): Promise<Response> => {
 
         // Simulate network delay
         if (MOCK_DELAY_MS > 0) {
-          await Bun.sleep(MOCK_DELAY_MS);
+          await sleep(MOCK_DELAY_MS);
         }
 
         const response = generateMockCompletion(body);
@@ -161,7 +165,7 @@ const handleMockRequest = async (req: Request): Promise<Response> => {
         const responseContent = (response.choices as any)?.[0]?.message?.content ?? '';
         const truncatedResponse = responseContent.length > 200 ? responseContent.slice(0, 200) + '...' : responseContent;
         console.log('┌─────────────────────────────────────────────────────────────');
-        console.log('│ 📤 MOCK RESPONSE');
+        console.log('│ MOCK RESPONSE');
         console.log('├─────────────────────────────────────────────────────────────');
         console.log('│ ID:', response.id);
         console.log('│ Model:', response.model);
@@ -206,7 +210,7 @@ const waitForServer = async (port: number, maxAttempts = 60, delayMs = 500): Pro
     } catch {
       // Server not ready yet
     }
-    await Bun.sleep(delayMs);
+    await sleep(delayMs);
   }
   throw new Error(`Server on port ${port} not ready after ${maxAttempts} attempts`);
 };
@@ -214,36 +218,24 @@ const waitForServer = async (port: number, maxAttempts = 60, delayMs = 500): Pro
 const main = async () => {
   console.log('[Mock] Starting Rsbuild dev server on port', RSBUILD_PORT);
 
-  // Start Rsbuild dev server
-  const rsbuildProcess = Bun.spawn(['bunx', 'rsbuild', 'dev', '--port', String(RSBUILD_PORT)], {
-    env: { ...Bun.env },
-    stdout: 'pipe',
-    stderr: 'pipe',
+  // Start Rsbuild dev server using Node.js child_process
+  const rsbuildProcess: ChildProcess = spawn('npx', ['rsbuild', 'dev', '--port', String(RSBUILD_PORT)], {
+    env: { ...process.env },
+    stdio: ['ignore', 'pipe', 'pipe'],
+    shell: true,
   });
 
   // Stream Rsbuild output
-  (async () => {
-    const reader = rsbuildProcess.stdout.getReader();
-    const decoder = new TextDecoder();
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const output = decoder.decode(value);
-      if (output.includes('ready') || output.includes('error') || output.includes('http://')) {
-        process.stdout.write(`[Rsbuild] ${output}`);
-      }
+  rsbuildProcess.stdout?.on('data', (data: Buffer) => {
+    const output = data.toString();
+    if (output.includes('ready') || output.includes('error') || output.includes('http://')) {
+      process.stdout.write(`[Rsbuild] ${output}`);
     }
-  })();
+  });
 
-  (async () => {
-    const reader = rsbuildProcess.stderr.getReader();
-    const decoder = new TextDecoder();
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      process.stderr.write(`[Rsbuild] ${decoder.decode(value)}`);
-    }
-  })();
+  rsbuildProcess.stderr?.on('data', (data: Buffer) => {
+    process.stderr.write(`[Rsbuild] ${data.toString()}`);
+  });
 
   // Handle shutdown
   const shutdown = () => {
@@ -266,15 +258,11 @@ const main = async () => {
     process.exit(1);
   }
 
-  // Start mock server
-  Bun.serve({
-    port: MOCK_PORT,
-    fetch: handleMockRequest,
-  });
-
-  console.log(`
+  // Start mock server using @hono/node-server
+  serve({ fetch: handleMockRequest, port: MOCK_PORT }, () => {
+    console.log(`
 ╔══════════════════════════════════════════════════════════════╗
-║                    🧪 MOCK DEV SERVER                        ║
+║                    MOCK DEV SERVER                           ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Mock server:    http://localhost:${String(MOCK_PORT).padEnd(27)}║
 ║  Rsbuild:        http://localhost:${String(RSBUILD_PORT).padEnd(27)}║
@@ -286,9 +274,10 @@ const main = async () => {
 ║                                                              ║
 ║  All other requests proxied to Rsbuild dev server.           ║
 ║                                                              ║
-║  To use real AI: bun run dev (with GROK_KEY set)             ║
+║  To use real AI: npm run dev (with GROK_KEY set)             ║
 ╚══════════════════════════════════════════════════════════════╝
 `);
+  });
 };
 
 main().catch((error) => {

@@ -1,11 +1,12 @@
 /**
- * Hono API server with security hardening (Bun runtime).
+ * Hono API server with security hardening (Node.js runtime).
  * - Serves API routes at /api/v1/chat/*
  * - In production, also serves static files from dist/
  */
 
+import { serve } from '@hono/node-server';
+import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono, type Context } from 'hono';
-import { serveStatic } from 'hono/bun';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
 import { chatRoutes } from './routes/chat.js';
@@ -17,7 +18,7 @@ app.use('*', secureHeaders());
 app.use(
   '*',
   cors({
-    origin: Bun.env.CORS_ORIGIN || '*',
+    origin: process.env.CORS_ORIGIN || '*',
     allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     maxAge: 86400,
@@ -55,17 +56,15 @@ app.use('/api/*', async (c: Context, next) => {
 app.route('/api/v1/chat', chatRoutes);
 
 // Production: serve static files
-if (Bun.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'production') {
   app.use('/*', serveStatic({ root: './dist' }));
   // SPA fallback - serve index.html for all non-API routes
   app.get('*', serveStatic({ path: './dist/index.html' }));
 }
 
-const port = parseInt(Bun.env.PORT || '3001', 10);
-console.log(`🚀 Server running on http://localhost:${port}`);
-console.log(`   Environment: ${Bun.env.NODE_ENV || 'development'}`);
+const port = parseInt(process.env.PORT || '3001', 10);
 
-export default {
-  fetch: app.fetch,
-  port,
-};
+serve({ fetch: app.fetch, port }, () => {
+  console.log(`Server running on http://localhost:${port}`);
+  console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
+});

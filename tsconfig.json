@@ -8,7 +8,7 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": ["bun-types", "@rstest/core/globals"]
+    "types": ["node", "@rstest/core/globals"]
   },
   "include": ["src", "server", "mock", "rsbuild.config.ts", "rstest.config.ts"]
 }

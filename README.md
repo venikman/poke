@@ -1,32 +1,32 @@
 # Full-Stack AI RS Template
 
-A full-stack template using **Bun.js** + Rsbuild (frontend) + Hono (API server), Rstest, and OpenRouter for AI inference.
+A full-stack template using **Node.js** + Rsbuild (frontend) + Hono (API server), Rstest, and OpenRouter for AI inference.
 
-> **Runtime**: Bun.js v1.3+ (Bun-only; Node/npm not required)
+> **Runtime**: Node.js v24+ (with tsx for TypeScript execution)
 
 ## Getting Started
 
 1. Install dependencies:
-   - `bun install`
+   - `npm install`
 2. Start the dev server:
-   - `bun run dev` — starts frontend (http://localhost:5173) + API server (http://localhost:3001), requires `GROK_KEY` for AI features
-   - `bun run dev:mock` — mock AI responses at http://localhost:8080, no API key needed
+   - `npm run dev` — starts frontend (http://localhost:5173) + API server (http://localhost:3001), requires `GROK_KEY` for AI features
+   - `npm run dev:mock` — mock AI responses at http://localhost:8080, no API key needed
 3. Build for production:
-   - `bun run build`
+   - `npm run build`
 4. Run the production server:
-   - `bun run start`
+   - `npm run start`
 5. Run tests:
-   - `bun run test` — runs API/unit tests only
-   - `bun run test:browser` — runs browser tests only (requires Playwright)
-   - `bun run test:all` — runs both API and browser tests
-   - `bun run test:browser:install` — installs Chromium for Playwright (run once)
+   - `npm run test` — runs API/unit tests only
+   - `npm run test:browser` — runs browser tests only (requires Playwright)
+   - `npm run test:all` — runs both API and browser tests
+   - `npm run test:browser:install` — installs Chromium for Playwright (run once)
 
 ## Mock Server
 
 For local development without an API key, use the mock server:
 
 ```bash
-bun run dev:mock
+npm run dev:mock
 ```
 
 This starts:
@@ -42,7 +42,7 @@ Environment variables for mock server:
 
 ## Rs-family toolchain
 
-This template uses **Bun.js** runtime with the **rs-family** stack: **Rsbuild** (frontend build), **Rstest** (browser tests), **Hono** (API server).
+This template uses **Node.js** runtime with the **rs-family** stack: **Rsbuild** (frontend build), **Rstest** (browser tests), **Hono** (API server).
 
 | Concern | Where to configure |
 |--------|---------------------|
@@ -56,9 +56,9 @@ This template uses **Bun.js** runtime with the **rs-family** stack: **Rsbuild** 
 Linting with **RSLint** (rs-family, Go-based, enforces functional programming style):
 
 ```bash
-bun run lint          # Check for issues
-bun run lint:fix      # Auto-fix where possible
-bun run check         # Lint + type check
+npm run lint          # Check for issues
+npm run lint:fix      # Auto-fix where possible
+npm run check         # Lint + type check
 ```
 
 ### Functional Programming Rules
