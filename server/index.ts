@@ -55,6 +55,10 @@ app.use('/api/*', async (c: Context, next) => {
 // API routes
 app.route('/api/v1/chat', chatRoutes);
 
+// Architecture diagrams (LikeC4 static site)
+app.use('/architecture/*', serveStatic({ root: './likec4/dist', rewriteRequestPath: (path) => path.replace('/architecture', '') }));
+app.get('/architecture', (c) => c.redirect('/architecture/'));
+
 // Production: serve static files
 if (process.env.NODE_ENV === 'production') {
   app.use('/*', serveStatic({ root: './dist' }));

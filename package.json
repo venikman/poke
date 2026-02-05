@@ -8,7 +8,7 @@
     "dev:fe": "rsbuild dev",
     "dev:api": "tsx --watch server/index.ts",
     "dev:mock": "tsx mock/mock-server.ts",
-    "build": "rsbuild build",
+    "build": "rsbuild build && npm run likec4:build",
     "start": "NODE_ENV=production tsx server/index.ts",
     "test": "rstest --project api",
     "test:browser": "rstest --project browser",
@@ -19,7 +19,8 @@
     "lint": "rslint src server mock",
     "lint:fix": "rslint --fix src server mock",
     "check": "npm run lint && tsc --noEmit",
-    "likec4": "likec4 serve likec4"
+    "likec4": "likec4 serve likec4",
+    "likec4:build": "likec4 build likec4 -o likec4/dist --base /architecture/"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.0",
