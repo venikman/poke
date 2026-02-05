@@ -1,4 +1,3 @@
-import path from 'node:path';
 import { defineConfig } from '@rstest/core';
 import { pluginReact } from '@rsbuild/plugin-react';
 
@@ -10,13 +9,6 @@ export default defineConfig({
       name: 'browser',
       globals: true,
       include: ['src/**/*.browser.test.tsx'],
-      resolve: {
-        alias: {
-          '@': path.resolve(import.meta.dirname, 'src'),
-          '@shared': path.resolve(import.meta.dirname, 'shared'),
-          '@server': path.resolve(import.meta.dirname, 'server'),
-        },
-      },
       plugins: [pluginReact()],
       browser: {
         enabled: true,
@@ -26,7 +18,7 @@ export default defineConfig({
       },
     },
     {
-      name: 'node',
+      name: 'api',
       globals: true,
       testEnvironment: 'node',
       include: ['server/**/*.test.ts'],

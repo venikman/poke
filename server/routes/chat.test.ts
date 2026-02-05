@@ -1,4 +1,4 @@
-import { post, get, type HealthResponse } from './chat.js';
+import { post, get } from './chat.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Completions tests

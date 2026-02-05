@@ -212,21 +212,8 @@ function err(message: string, status = 400): Response {
   );
 }
 
-function authErr(): Response {
-  return new Response(
-    JSON.stringify({
-      error: {
-        message: 'Invalid or missing API token',
-        type: 'invalid_api_key',
-        code: 'invalid_api_key',
-      },
-    }),
-    { status: 401, headers: { 'Content-Type': 'application/json' } },
-  );
-}
-
 /**
- * Direct handler for testing - same interface as old Modern.js BFF
+ * Direct handler for unit tests (bypasses HTTP and calls the logic directly).
  */
 export const post = async (
   req: RequestOption,
@@ -258,11 +245,8 @@ export const post = async (
     };
   }
 
-  const apiToken = process.env.API_TOKEN;
-  if (apiToken) {
-    // In direct test mode, we can't access headers, so skip auth check
-    // Real auth is handled in the Hono route above
-  }
+  // In direct test mode, we can't access headers, so skip auth check.
+  // Real auth is handled in the Hono route above.
 
   const apiKey = process.env.GROK_KEY;
   if (!apiKey) return err('Missing GROK_KEY.', 500);

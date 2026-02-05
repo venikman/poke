@@ -1,23 +1,20 @@
-#!/usr/bin/env npx tsx
 /**
- * Mock Server for local development without real AI calls.
+ * Mock Server for local development without real AI calls (Bun runtime).
  *
- * Run with: npm run dev:mock
+ * Run with: bun run dev:mock
  * Then use exactly like the real server at http://localhost:8080
  *
  * The mock server proxies to Rsbuild dev server for static assets,
  * but intercepts /api/v1/chat/* endpoints with mock responses.
  */
-import * as http from 'node:http';
-import { spawn, type ChildProcess } from 'node:child_process';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Configuration
 // ─────────────────────────────────────────────────────────────────────────────
 
-const MOCK_PORT = parseInt(process.env.MOCK_PORT ?? '8080', 10);
-const RSBUILD_PORT = parseInt(process.env.RSBUILD_PORT ?? '5173', 10);
-const MOCK_DELAY_MS = parseInt(process.env.MOCK_DELAY_MS ?? '500', 10);
+const MOCK_PORT = parseInt(Bun.env.MOCK_PORT ?? '8080', 10);
+const RSBUILD_PORT = parseInt(Bun.env.RSBUILD_PORT ?? '5173', 10);
+const MOCK_DELAY_MS = parseInt(Bun.env.MOCK_DELAY_MS ?? '500', 10);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock Response Generators
@@ -65,7 +62,7 @@ I received your message: "${lastUserMsg?.content ?? '(empty)'}"
 
 This is a mock response because the server is running in mock mode. To use real AI:
 1. Set the \`GROK_KEY\` environment variable
-2. Run \`npm run dev\` instead of \`npm run dev:mock\`
+2. Run \`bun run dev\` instead of \`bun run dev:mock\`
 
 *Note: This is a mock response for local development.*`;
   }
@@ -90,175 +87,111 @@ This is a mock response because the server is running in mock mode. To use real 
   };
 };
 
+const startTime = Date.now();
 const generateMockHealth = (): Record<string, unknown> => ({
   status: 'healthy',
   mock: true,
-  uptime_ms: process.uptime() * 1000,
+  uptime_ms: Date.now() - startTime,
   timestamp: new Date().toISOString(),
   version: '1.0.0',
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HTTP Helpers
+// Mock Server Handler
 // ─────────────────────────────────────────────────────────────────────────────
 
-const parseBody = (req: http.IncomingMessage): Promise<unknown> =>
-  new Promise((resolve, reject) => {
-    let data = '';
-    req.on('data', (chunk) => (data += chunk));
-    req.on('end', () => {
-      try {
-        resolve(data ? JSON.parse(data) : {});
-      } catch (e) {
-        reject(e);
-      }
+const handleMockRequest = async (req: Request): Promise<Response> => {
+  const url = new URL(req.url);
+  const path = url.pathname;
+
+  // CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
     });
-    req.on('error', reject);
-  });
+  }
 
-const sendJson = (res: http.ServerResponse, status: number, data: unknown) => {
-  res.writeHead(status, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(data));
-};
-
-const proxyRequest = (
-  req: http.IncomingMessage,
-  res: http.ServerResponse,
-  targetPort: number,
-) => {
-  const options: http.RequestOptions = {
-    hostname: 'localhost',
-    port: targetPort,
-    path: req.url,
-    method: req.method,
-    headers: req.headers,
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Content-Type': 'application/json',
   };
 
-  const proxyReq = http.request(options, (proxyRes) => {
-    res.writeHead(proxyRes.statusCode ?? 500, proxyRes.headers);
-    proxyRes.pipe(res);
-  });
+  // Intercept API endpoints
+  if (path.startsWith('/api/v1/chat/')) {
+    const apiPath = path.slice('/api/v1/chat'.length);
+    console.log(`[Mock] ${req.method} ${path} -> intercepted`);
 
-  proxyReq.on('error', (err) => {
-    console.error('[Proxy] Error:', err.message);
-    res.writeHead(502, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Proxy error', message: err.message }));
-  });
-
-  req.pipe(proxyReq);
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Mock Server
-// ─────────────────────────────────────────────────────────────────────────────
-
-const startMockServer = (rsbuildPort: number) => {
-  const server = http.createServer(async (req, res) => {
-    const url = new URL(req.url ?? '/', `http://localhost:${MOCK_PORT}`);
-    const path = url.pathname;
-
-    // CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-    if (req.method === 'OPTIONS') {
-      res.writeHead(204);
-      res.end();
-      return;
-    }
-
-    // Intercept API endpoints
-    if (path.startsWith('/api/v1/chat/')) {
-      const apiPath = path.slice('/api/v1/chat'.length);
-
-      console.log(`[Mock] ${req.method} ${path} -> intercepted`);
-
-      try {
-        // Health endpoint
-        if (apiPath === '/health' && req.method === 'GET') {
-          sendJson(res, 200, generateMockHealth());
-          return;
-        }
-
-        // Completions endpoint
-        if (apiPath === '/completions' && req.method === 'POST') {
-          const body = (await parseBody(req)) as ChatRequest;
-
-          // Log the incoming request
-          console.log('\n┌─────────────────────────────────────────────────────────────');
-          console.log('│ 📥 INCOMING REQUEST');
-          console.log('├─────────────────────────────────────────────────────────────');
-          console.log('│ Model:', body.model ?? '(default)');
-          console.log('│ Temperature:', body.temperature ?? '(default)');
-          console.log('│ Max tokens:', body.max_tokens ?? '(default)');
-          console.log('│ Messages:');
-          for (const msg of body.messages ?? []) {
-            const content = msg.content.length > 100 
-              ? msg.content.slice(0, 100) + '...' 
-              : msg.content;
-            console.log(`│   [${msg.role}]: ${content}`);
-          }
-          console.log('└─────────────────────────────────────────────────────────────\n');
-
-          // Simulate network delay
-          if (MOCK_DELAY_MS > 0) {
-            await new Promise((r) => setTimeout(r, MOCK_DELAY_MS));
-          }
-
-          const response = generateMockCompletion(body);
-
-          // Log the outgoing response
-          const responseContent = (response.choices as any)?.[0]?.message?.content ?? '';
-          const truncatedResponse = responseContent.length > 200 
-            ? responseContent.slice(0, 200) + '...' 
-            : responseContent;
-          console.log('┌─────────────────────────────────────────────────────────────');
-          console.log('│ 📤 MOCK RESPONSE');
-          console.log('├─────────────────────────────────────────────────────────────');
-          console.log('│ ID:', response.id);
-          console.log('│ Model:', response.model);
-          console.log('│ Content:', truncatedResponse.split('\n').join('\n│          '));
-          console.log('└─────────────────────────────────────────────────────────────\n');
-
-          sendJson(res, 200, response);
-          return;
-        }
-
-        // Unknown API endpoint
-        sendJson(res, 404, { error: { message: 'Not found', path: apiPath } });
-      } catch (error) {
-        console.error('[Mock] Error:', error);
-        sendJson(res, 500, { error: { message: String(error) } });
+    try {
+      // Health endpoint
+      if (apiPath === '/health' && req.method === 'GET') {
+        return Response.json(generateMockHealth(), { headers: corsHeaders });
       }
-      return;
+
+      // Completions endpoint
+      if (apiPath === '/completions' && req.method === 'POST') {
+        const body = (await req.json()) as ChatRequest;
+
+        // Log the incoming request
+        console.log('\n┌─────────────────────────────────────────────────────────────');
+        console.log('│ 📥 INCOMING REQUEST');
+        console.log('├─────────────────────────────────────────────────────────────');
+        console.log('│ Model:', body.model ?? '(default)');
+        console.log('│ Temperature:', body.temperature ?? '(default)');
+        console.log('│ Max tokens:', body.max_tokens ?? '(default)');
+        console.log('│ Messages:');
+        for (const msg of body.messages ?? []) {
+          const content = msg.content.length > 100 ? msg.content.slice(0, 100) + '...' : msg.content;
+          console.log(`│   [${msg.role}]: ${content}`);
+        }
+        console.log('└─────────────────────────────────────────────────────────────\n');
+
+        // Simulate network delay
+        if (MOCK_DELAY_MS > 0) {
+          await Bun.sleep(MOCK_DELAY_MS);
+        }
+
+        const response = generateMockCompletion(body);
+
+        // Log the outgoing response
+        const responseContent = (response.choices as any)?.[0]?.message?.content ?? '';
+        const truncatedResponse = responseContent.length > 200 ? responseContent.slice(0, 200) + '...' : responseContent;
+        console.log('┌─────────────────────────────────────────────────────────────');
+        console.log('│ 📤 MOCK RESPONSE');
+        console.log('├─────────────────────────────────────────────────────────────');
+        console.log('│ ID:', response.id);
+        console.log('│ Model:', response.model);
+        console.log('│ Content:', truncatedResponse.split('\n').join('\n│          '));
+        console.log('└─────────────────────────────────────────────────────────────\n');
+
+        return Response.json(response, { headers: corsHeaders });
+      }
+
+      // Unknown API endpoint
+      return Response.json({ error: { message: 'Not found', path: apiPath } }, { status: 404, headers: corsHeaders });
+    } catch (error) {
+      console.error('[Mock] Error:', error);
+      return Response.json({ error: { message: String(error) } }, { status: 500, headers: corsHeaders });
     }
+  }
 
-    // Proxy everything else to Rsbuild dev server
-    proxyRequest(req, res, rsbuildPort);
-  });
-
-  server.listen(MOCK_PORT, () => {
-    console.log(`
-╔══════════════════════════════════════════════════════════════╗
-║                    🧪 MOCK DEV SERVER                        ║
-╠══════════════════════════════════════════════════════════════╣
-║  Mock server:    http://localhost:${String(MOCK_PORT).padEnd(27)}║
-║  Rsbuild:        http://localhost:${String(rsbuildPort).padEnd(27)}║
-║  Mock delay:     ${String(MOCK_DELAY_MS + 'ms').padEnd(43)}║
-║                                                              ║
-║  Intercepted endpoints:                                      ║
-║    GET  /api/v1/chat/health       Mock health check          ║
-║    POST /api/v1/chat/completions  Mock AI completions        ║
-║                                                              ║
-║  All other requests proxied to Rsbuild dev server.           ║
-║                                                              ║
-║  To use real AI: npm run dev (with GROK_KEY set)             ║
-╚══════════════════════════════════════════════════════════════╝
-`);
-  });
-
-  return server;
+  // Proxy everything else to Rsbuild dev server
+  try {
+    const proxyUrl = `http://localhost:${RSBUILD_PORT}${path}${url.search}`;
+    const proxyResponse = await fetch(proxyUrl, {
+      method: req.method,
+      headers: req.headers,
+      body: req.method !== 'GET' && req.method !== 'HEAD' ? req.body : undefined,
+    });
+    return proxyResponse;
+  } catch (err) {
+    console.error('[Proxy] Error:', err);
+    return Response.json({ error: 'Proxy error', message: String(err) }, { status: 502, headers: corsHeaders });
+  }
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -268,26 +201,12 @@ const startMockServer = (rsbuildPort: number) => {
 const waitForServer = async (port: number, maxAttempts = 60, delayMs = 500): Promise<void> => {
   for (let i = 0; i < maxAttempts; i++) {
     try {
-      await new Promise<void>((resolve, reject) => {
-        const req = http.get(`http://localhost:${port}/`, (res) => {
-          res.resume(); // Consume response to free up memory
-          if (res.statusCode && res.statusCode < 500) {
-            resolve();
-          } else {
-            reject(new Error(`Status ${res.statusCode}`));
-          }
-        });
-        req.on('error', reject);
-        req.setTimeout(1000, () => {
-          req.destroy();
-          reject(new Error('Timeout'));
-        });
-      });
-      return;
+      const res = await fetch(`http://localhost:${port}/`, { signal: AbortSignal.timeout(1000) });
+      if (res.status < 500) return;
     } catch {
       // Server not ready yet
     }
-    await new Promise((r) => setTimeout(r, delayMs));
+    await Bun.sleep(delayMs);
   }
   throw new Error(`Server on port ${port} not ready after ${maxAttempts} attempts`);
 };
@@ -295,33 +214,41 @@ const waitForServer = async (port: number, maxAttempts = 60, delayMs = 500): Pro
 const main = async () => {
   console.log('[Mock] Starting Rsbuild dev server on port', RSBUILD_PORT);
 
-  // Start Rsbuild dev server (frontend only, no API proxy needed - we handle API)
-  const rsbuildProcess: ChildProcess = spawn('npx', ['rsbuild', 'dev', '--port', String(RSBUILD_PORT)], {
-    env: { ...process.env },
-    stdio: ['ignore', 'pipe', 'pipe'],
+  // Start Rsbuild dev server
+  const rsbuildProcess = Bun.spawn(['bunx', 'rsbuild', 'dev', '--port', String(RSBUILD_PORT)], {
+    env: { ...Bun.env },
+    stdout: 'pipe',
+    stderr: 'pipe',
   });
 
-  rsbuildProcess.stdout?.on('data', (data) => {
-    const output = data.toString();
-    // Filter out some noise, show important messages
-    if (output.includes('ready') || output.includes('error') || output.includes('http://')) {
-      process.stdout.write(`[Rsbuild] ${output}`);
+  // Stream Rsbuild output
+  (async () => {
+    const reader = rsbuildProcess.stdout.getReader();
+    const decoder = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const output = decoder.decode(value);
+      if (output.includes('ready') || output.includes('error') || output.includes('http://')) {
+        process.stdout.write(`[Rsbuild] ${output}`);
+      }
     }
-  });
+  })();
 
-  rsbuildProcess.stderr?.on('data', (data) => {
-    process.stderr.write(`[Rsbuild] ${data}`);
-  });
-
-  rsbuildProcess.on('exit', (code) => {
-    console.log(`[Rsbuild] Process exited with code ${code}`);
-    process.exit(code ?? 1);
-  });
+  (async () => {
+    const reader = rsbuildProcess.stderr.getReader();
+    const decoder = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      process.stderr.write(`[Rsbuild] ${decoder.decode(value)}`);
+    }
+  })();
 
   // Handle shutdown
   const shutdown = () => {
     console.log('\n[Mock] Shutting down...');
-    rsbuildProcess.kill('SIGTERM');
+    rsbuildProcess.kill();
     process.exit(0);
   };
 
@@ -335,12 +262,33 @@ const main = async () => {
     console.log('[Mock] Rsbuild dev server is ready');
   } catch (error) {
     console.error('[Mock] Failed to start Rsbuild dev server:', error);
-    rsbuildProcess.kill('SIGTERM');
+    rsbuildProcess.kill();
     process.exit(1);
   }
 
   // Start mock server
-  startMockServer(RSBUILD_PORT);
+  Bun.serve({
+    port: MOCK_PORT,
+    fetch: handleMockRequest,
+  });
+
+  console.log(`
+╔══════════════════════════════════════════════════════════════╗
+║                    🧪 MOCK DEV SERVER                        ║
+╠══════════════════════════════════════════════════════════════╣
+║  Mock server:    http://localhost:${String(MOCK_PORT).padEnd(27)}║
+║  Rsbuild:        http://localhost:${String(RSBUILD_PORT).padEnd(27)}║
+║  Mock delay:     ${String(MOCK_DELAY_MS + 'ms').padEnd(43)}║
+║                                                              ║
+║  Intercepted endpoints:                                      ║
+║    GET  /api/v1/chat/health       Mock health check          ║
+║    POST /api/v1/chat/completions  Mock AI completions        ║
+║                                                              ║
+║  All other requests proxied to Rsbuild dev server.           ║
+║                                                              ║
+║  To use real AI: bun run dev (with GROK_KEY set)             ║
+╚══════════════════════════════════════════════════════════════╝
+`);
 };
 
 main().catch((error) => {

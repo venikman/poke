@@ -8,13 +8,7 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"],
-      "@server/*": ["server/*"],
-      "@shared/*": ["shared/*"]
-    },
-    "types": ["@rstest/core/globals"]
+    "types": ["bun-types", "@rstest/core/globals"]
   },
-  "include": ["src", "server", "rsbuild.config.ts", "rstest.config.ts"]
+  "include": ["src", "server", "mock", "rsbuild.config.ts", "rstest.config.ts"]
 }

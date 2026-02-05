@@ -1,56 +1,73 @@
-# Full-Stack AI RS Template (Modern.js)
+# Full-Stack AI RS Template
 
-A full-stack template using Modern.js (Rspack + Rsbuild), BFF API routes, Rstest, and OpenRouter for AI inference.
+A full-stack template using **Bun.js** + Rsbuild (frontend) + Hono (API server), Rstest, and OpenRouter for AI inference.
+
+> **Runtime**: Bun.js v1.3+ (Bun-only; Node/npm not required)
 
 ## Getting Started
 
 1. Install dependencies:
-   - `npm install`
-2. Optional: build shared utils:
-   - `npm run build:shared`
-3. Start the dev server (default: http://localhost:8080):
-   - `npm run dev` — requires `GROK_KEY` for AI features
-   - `npm run dev:mock` — mock AI responses, no API key needed
-4. Build for production:
-   - `npm run build`
-5. Run the production server:
-   - `npm run serve`
-6. Run tests:
-   - `npm test` — runs node tests only (API/lambda)
-   - `npm run test:browser` — runs browser tests only (requires Playwright)
-   - `npm run test:all` — runs both node and browser tests
-   - `npm run test:browser:install` — installs Chromium for Playwright (run once)
+   - `bun install`
+2. Start the dev server:
+   - `bun run dev` — starts frontend (http://localhost:5173) + API server (http://localhost:3001), requires `GROK_KEY` for AI features
+   - `bun run dev:mock` — mock AI responses at http://localhost:8080, no API key needed
+3. Build for production:
+   - `bun run build`
+4. Run the production server:
+   - `bun run start`
+5. Run tests:
+   - `bun run test` — runs API/unit tests only
+   - `bun run test:browser` — runs browser tests only (requires Playwright)
+   - `bun run test:all` — runs both API and browser tests
+   - `bun run test:browser:install` — installs Chromium for Playwright (run once)
 
 ## Mock Server
 
 For local development without an API key, use the mock server:
 
 ```bash
-npm run dev:mock
+bun run dev:mock
 ```
 
 This starts:
-- Modern.js dev server on port 8081 (internal)
+- Rsbuild dev server on port 5173 (internal)
 - Mock proxy server on port 8080 (use this URL)
 
-The mock server intercepts `/api/v1/chat/*` endpoints and returns simulated AI responses. All other requests are proxied to the real Modern.js dev server.
+The mock server intercepts `/api/v1/chat/*` endpoints and returns simulated AI responses. All other requests are proxied to the Rsbuild dev server.
 
 Environment variables for mock server:
 - `MOCK_PORT` — mock server port (default: 8080)
-- `MODERN_PORT` — Modern.js internal port (default: 8081)
+- `RSBUILD_PORT` — Rsbuild internal port (default: 5173)
 - `MOCK_DELAY_MS` — simulated API latency in ms (default: 500)
 
 ## Rs-family toolchain
 
-This template uses the **rs-family** stack: **Rspack** (app build), **Rsbuild** (test bundling), **Rstest** (tests).
+This template uses **Bun.js** runtime with the **rs-family** stack: **Rsbuild** (frontend build), **Rstest** (browser tests), **Hono** (API server).
 
 | Concern | Where to configure |
 |--------|---------------------|
-| **App build (Rspack)** | `modern.config.ts` — use `tools.rspack` to customize. See `rspack.config.ts` for a reference comment. |
-| **Test bundling (Rsbuild)** | `rstest.config.ts` — per-project `plugins`, `resolve.alias`, etc. See `rsbuild.config.ts` for reference. |
-| **Tests (Rstest)** | `rstest.config.ts` — projects (browser vs node), coverage, Playwright provider. |
+| **Frontend build (Rsbuild)** | `rsbuild.config.ts` — entry, aliases, dev server proxy. |
+| **API server (Hono)** | `server/index.ts` — routes, middleware, rate limiting. |
+| **Tests (Rstest)** | `rstest.config.ts` — projects (browser vs api), coverage, Playwright provider. |
+| **Linting (RSLint)** | `rslint.json` — FP-style rules, no mutations, prefer const. |
 
-There are no standalone Rspack/Rsbuild config files that drive the build; the entry points above are the single source of truth.
+## Code Quality
+
+Linting with **RSLint** (rs-family, Go-based, enforces functional programming style):
+
+```bash
+bun run lint          # Check for issues
+bun run lint:fix      # Auto-fix where possible
+bun run check         # Lint + type check
+```
+
+### Functional Programming Rules
+
+The linter enforces a small FP-leaning baseline:
+- Prefer `const` over `let` (and no `var`)
+- No parameter reassignment
+- Prefer arrow callbacks / rest params / spread where applicable
+- Warn on unused variables
 
 ## API
 
@@ -63,7 +80,7 @@ import OpenAI from 'openai';
 const token = getAuthToken(); // from auth context / SSO session
 
 const openai = new OpenAI({
-  baseURL: 'http://localhost:8080/api/v1',
+  baseURL: 'http://localhost:5173/api/v1',  // or :8080 with mock server
   apiKey: token ?? 'dummy',  // pass token from session; backend validates if API_TOKEN set
   dangerouslyAllowBrowser: true,
 });

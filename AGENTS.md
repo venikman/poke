@@ -58,6 +58,7 @@ Query via `/mcp` or use inline in tool calls.
 3. **Query MCP** for telemetry when debugging production issues.
 4. **Prefer `rg`** for code search; show exact commands.
 5. **Run tests** after changes when feasible.
+6. **Bun-only tooling**: use `bun install`, `bun run`, and `bunx`; avoid `npm`, `npx`, and `node` commands unless explicitly requested.
 
 ---
 

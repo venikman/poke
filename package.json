@@ -4,17 +4,21 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n fe,api -c blue,green \"rsbuild dev\" \"tsx watch server/index.ts\"",
-    "dev:api": "tsx watch server/index.ts",
-    "dev:mock": "tsx mock/mock-server.ts",
+    "dev": "bun run dev:api & bun run dev:fe",
+    "dev:fe": "rsbuild dev",
+    "dev:api": "bun --watch server/index.ts",
+    "dev:mock": "bun mock/mock-server.ts",
     "build": "rsbuild build",
-    "start": "NODE_ENV=production node --import tsx server/index.ts",
-    "test": "rstest --project node",
+    "start": "NODE_ENV=production bun server/index.ts",
+    "test": "rstest --project api",
     "test:browser": "rstest --project browser",
-    "test:all": "rstest --project node && rstest --project browser",
+    "test:all": "rstest --project api && rstest --project browser",
     "test:watch": "rstest --watch",
     "test:coverage": "rstest --coverage",
-    "test:browser:install": "npx playwright install chromium"
+    "test:browser:install": "bunx playwright install chromium",
+    "lint": "rslint src server mock",
+    "lint:fix": "rslint --fix src server mock",
+    "check": "bun run lint && tsc --noEmit"
   },
   "dependencies": {
     "hono": "^4.7.10",
@@ -24,18 +28,16 @@
     "react-router": "^7.6.1"
   },
   "devDependencies": {
-    "@hono/node-server": "^1.14.1",
     "@playwright/test": "^1.50.2",
     "@rsbuild/core": "^1.4.3",
     "@rsbuild/plugin-react": "^1.4.5",
     "@rstest/browser": "^0.8.1",
     "@rstest/browser-react": "^0.8.1",
     "@rstest/core": "^0.8.1",
-    "@types/node": "^25.1.0",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
-    "concurrently": "^9.1.2",
-    "tsx": "^4.20.5",
+    "bun-types": "^1.2.4",
+    "@rslint/core": "^0.2.0",
     "typescript": "^5.9.3"
   }
 }
