@@ -6,7 +6,7 @@
 
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
-import { Hono, type Context } from 'hono';
+import { type Context, Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
 import { chatRoutes } from './routes/chat.js';
@@ -31,20 +31,14 @@ const RATE_LIMIT = 100;
 const WINDOW_MS = 60 * 1000;
 
 app.use('/api/*', async (c: Context, next) => {
-  const ip =
-    c.req.header('x-forwarded-for') ||
-    c.req.header('x-real-ip') ||
-    'unknown';
+  const ip = c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown';
   const now = Date.now();
   const record = rateLimitMap.get(ip);
 
   if (!record || now > record.resetTime) {
     rateLimitMap.set(ip, { count: 1, resetTime: now + WINDOW_MS });
   } else if (record.count >= RATE_LIMIT) {
-    return c.json(
-      { error: { message: 'Too many requests', type: 'rate_limit_error' } },
-      429,
-    );
+    return c.json({ error: { message: 'Too many requests', type: 'rate_limit_error' } }, 429);
   } else {
     record.count++;
   }
@@ -56,7 +50,13 @@ app.use('/api/*', async (c: Context, next) => {
 app.route('/api/v1/chat', chatRoutes);
 
 // Architecture diagrams (LikeC4 static site)
-app.use('/architecture/*', serveStatic({ root: './likec4/dist', rewriteRequestPath: (path) => path.replace('/architecture', '') }));
+app.use(
+  '/architecture/*',
+  serveStatic({
+    root: './likec4/dist',
+    rewriteRequestPath: (path) => path.replace('/architecture', ''),
+  }),
+);
 app.get('/architecture', (c) => c.redirect('/architecture/'));
 
 // Production: serve static files

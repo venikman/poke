@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import type React from 'react';
+import { useCallback, useState } from 'react';
 
 export interface CounterProps {
   initialValue?: number;
@@ -49,26 +50,13 @@ const Counter: React.FC<CounterProps> = ({
         borderRadius: '4px',
       }}
     >
-      <button
-        type="button"
-        onClick={decrement}
-        disabled={count <= min}
-        aria-label="Decrement"
-      >
+      <button type="button" onClick={decrement} disabled={count <= min} aria-label="Decrement">
         −
       </button>
-      <span
-        data-testid="counter-value"
-        style={{ minWidth: '3ch', textAlign: 'center' }}
-      >
+      <span data-testid="counter-value" style={{ minWidth: '3ch', textAlign: 'center' }}>
         {count}
       </span>
-      <button
-        type="button"
-        onClick={increment}
-        disabled={count >= max}
-        aria-label="Increment"
-      >
+      <button type="button" onClick={increment} disabled={count >= max} aria-label="Increment">
         +
       </button>
       <button type="button" onClick={reset} aria-label="Reset">

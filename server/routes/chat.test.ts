@@ -1,4 +1,4 @@
-import { post, get } from './chat.js';
+import { get, post } from './chat.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Completions tests
@@ -23,12 +23,18 @@ test('returns OpenAI-format chat completion', async () => {
     expect(result.object).toBe('chat.completion');
     expect(result.model).toBeDefined();
     expect(result.choices).toHaveLength(1);
-    expect((result.choices as Array<{ message: { role: string; content: string } }>)[0].message.role).toBe('assistant');
-    expect((result.choices as Array<{ message: { role: string; content: string } }>)[0].message.content).toBe('Mocked response.');
+    expect(
+      (result.choices as Array<{ message: { role: string; content: string } }>)[0].message.role,
+    ).toBe('assistant');
+    expect(
+      (result.choices as Array<{ message: { role: string; content: string } }>)[0].message.content,
+    ).toBe('Mocked response.');
     expect((result.choices as Array<{ finish_reason: string }>)[0].finish_reason).toBe('stop');
     expect(result.usage).toBeDefined();
     expect((result.usage as { prompt_tokens: number }).prompt_tokens).toBeGreaterThanOrEqual(0);
-    expect((result.usage as { completion_tokens: number }).completion_tokens).toBeGreaterThanOrEqual(0);
+    expect(
+      (result.usage as { completion_tokens: number }).completion_tokens,
+    ).toBeGreaterThanOrEqual(0);
   } finally {
     if (previous === undefined) {
       delete process.env.OPENROUTER_MOCK;

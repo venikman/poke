@@ -1,8 +1,7 @@
 import { render } from '@rstest/browser-react';
 import Counter from './Counter';
 
-const getValue = () =>
-  document.querySelector('[data-testid="counter-value"]')?.textContent;
+const getValue = () => document.querySelector('[data-testid="counter-value"]')?.textContent;
 
 const getButtons = () => {
   const buttons = document.querySelectorAll('button');

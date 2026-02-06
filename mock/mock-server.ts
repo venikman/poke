@@ -8,9 +8,9 @@
  * but intercepts /api/v1/chat/* endpoints with mock responses.
  */
 
+import { type ChildProcess, spawn } from 'node:child_process';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { serve } from '@hono/node-server';
-import { spawn, type ChildProcess } from 'child_process';
-import { setTimeout as sleep } from 'timers/promises';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Configuration
@@ -25,7 +25,12 @@ const MOCK_DELAY_MS = parseInt(process.env.MOCK_DELAY_MS ?? '500', 10);
 // ─────────────────────────────────────────────────────────────────────────────
 
 type ChatMessage = { role: string; content: string };
-type ChatRequest = { messages: ChatMessage[]; model?: string; temperature?: number; max_tokens?: number };
+type ChatRequest = {
+  messages: ChatMessage[];
+  model?: string;
+  temperature?: number;
+  max_tokens?: number;
+};
 
 const generateMockCompletion = (request: ChatRequest): Record<string, unknown> => {
   const lastUserMsg = [...request.messages].reverse().find((m) => m.role === 'user');
@@ -34,7 +39,8 @@ const generateMockCompletion = (request: ChatRequest): Record<string, unknown> =
   let responseContent: string;
 
   if (userContent.includes('hello') || userContent.includes('hi')) {
-    responseContent = "Hello! I'm a mock AI response. The real AI is not connected, but I can help you test the UI flow.";
+    responseContent =
+      "Hello! I'm a mock AI response. The real AI is not connected, but I can help you test the UI flow.";
   } else if (userContent.includes('analyze') || userContent.includes('data')) {
     responseContent = `## Mock Analysis
 
@@ -149,7 +155,8 @@ const handleMockRequest = async (req: Request): Promise<Response> => {
         console.log('│ Max tokens:', body.max_tokens ?? '(default)');
         console.log('│ Messages:');
         for (const msg of body.messages ?? []) {
-          const content = msg.content.length > 100 ? msg.content.slice(0, 100) + '...' : msg.content;
+          const content =
+            msg.content.length > 100 ? `${msg.content.slice(0, 100)}...` : msg.content;
           console.log(`│   [${msg.role}]: ${content}`);
         }
         console.log('└─────────────────────────────────────────────────────────────\n');
@@ -163,7 +170,8 @@ const handleMockRequest = async (req: Request): Promise<Response> => {
 
         // Log the outgoing response
         const responseContent = (response.choices as any)?.[0]?.message?.content ?? '';
-        const truncatedResponse = responseContent.length > 200 ? responseContent.slice(0, 200) + '...' : responseContent;
+        const truncatedResponse =
+          responseContent.length > 200 ? `${responseContent.slice(0, 200)}...` : responseContent;
         console.log('┌─────────────────────────────────────────────────────────────');
         console.log('│ MOCK RESPONSE');
         console.log('├─────────────────────────────────────────────────────────────');
@@ -176,10 +184,16 @@ const handleMockRequest = async (req: Request): Promise<Response> => {
       }
 
       // Unknown API endpoint
-      return Response.json({ error: { message: 'Not found', path: apiPath } }, { status: 404, headers: corsHeaders });
+      return Response.json(
+        { error: { message: 'Not found', path: apiPath } },
+        { status: 404, headers: corsHeaders },
+      );
     } catch (error) {
       console.error('[Mock] Error:', error);
-      return Response.json({ error: { message: String(error) } }, { status: 500, headers: corsHeaders });
+      return Response.json(
+        { error: { message: String(error) } },
+        { status: 500, headers: corsHeaders },
+      );
     }
   }
 
@@ -194,7 +208,10 @@ const handleMockRequest = async (req: Request): Promise<Response> => {
     return proxyResponse;
   } catch (err) {
     console.error('[Proxy] Error:', err);
-    return Response.json({ error: 'Proxy error', message: String(err) }, { status: 502, headers: corsHeaders });
+    return Response.json(
+      { error: 'Proxy error', message: String(err) },
+      { status: 502, headers: corsHeaders },
+    );
   }
 };
 
@@ -219,11 +236,15 @@ const main = async () => {
   console.log('[Mock] Starting Rsbuild dev server on port', RSBUILD_PORT);
 
   // Start Rsbuild dev server using Node.js child_process
-  const rsbuildProcess: ChildProcess = spawn('npx', ['rsbuild', 'dev', '--port', String(RSBUILD_PORT)], {
-    env: { ...process.env },
-    stdio: ['ignore', 'pipe', 'pipe'],
-    shell: true,
-  });
+  const rsbuildProcess: ChildProcess = spawn(
+    'npx',
+    ['rsbuild', 'dev', '--port', String(RSBUILD_PORT)],
+    {
+      env: { ...process.env },
+      stdio: ['ignore', 'pipe', 'pipe'],
+      shell: true,
+    },
+  );
 
   // Stream Rsbuild output
   rsbuildProcess.stdout?.on('data', (data: Buffer) => {
@@ -266,7 +287,7 @@ const main = async () => {
 ╠══════════════════════════════════════════════════════════════╣
 ║  Mock server:    http://localhost:${String(MOCK_PORT).padEnd(27)}║
 ║  Rsbuild:        http://localhost:${String(RSBUILD_PORT).padEnd(27)}║
-║  Mock delay:     ${String(MOCK_DELAY_MS + 'ms').padEnd(43)}║
+║  Mock delay:     ${String(`${MOCK_DELAY_MS}ms`).padEnd(43)}║
 ║                                                              ║
 ║  Intercepted endpoints:                                      ║
 ║    GET  /api/v1/chat/health       Mock health check          ║

@@ -67,11 +67,7 @@ chatRoutes.post('/completions', async (c) => {
   }
 
   // Validate messages
-  if (
-    !body?.messages ||
-    !Array.isArray(body.messages) ||
-    body.messages.length === 0
-  ) {
+  if (!body?.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
     return c.json(
       {
         error: {
@@ -140,10 +136,8 @@ chatRoutes.post('/completions', async (c) => {
     Authorization: `Bearer ${apiKey}`,
     'Content-Type': 'application/json',
   };
-  if (process.env.OPENROUTER_REFERER)
-    headers['HTTP-Referer'] = process.env.OPENROUTER_REFERER;
-  if (process.env.OPENROUTER_TITLE)
-    headers['X-Title'] = process.env.OPENROUTER_TITLE;
+  if (process.env.OPENROUTER_REFERER) headers['HTTP-Referer'] = process.env.OPENROUTER_REFERER;
+  if (process.env.OPENROUTER_TITLE) headers['X-Title'] = process.env.OPENROUTER_TITLE;
 
   const payload = {
     model: body.model ?? DEFAULT_MODEL,
@@ -164,8 +158,7 @@ chatRoutes.post('/completions', async (c) => {
 
     const text = await res.text();
     if (!res.ok) {
-      const status =
-        res.status >= 400 && res.status < 600 ? res.status : 500;
+      const status = res.status >= 400 && res.status < 600 ? res.status : 500;
       return c.json(
         {
           error: {
@@ -215,22 +208,16 @@ function err(message: string, status = 400): Response {
 /**
  * Direct handler for unit tests (bypasses HTTP and calls the logic directly).
  */
-export const post = async (
-  req: RequestOption,
-): Promise<Record<string, unknown> | Response> => {
+export const post = async (req: RequestOption): Promise<Record<string, unknown> | Response> => {
   const body = req.data as Record<string, unknown> | undefined;
 
-  if (
-    !body?.messages ||
-    !Array.isArray(body.messages) ||
-    body.messages.length === 0
-  ) {
+  if (!body?.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
     return err('Request must include non-empty "messages" array.');
   }
 
   if (process.env.OPENROUTER_MOCK === '1') {
     return {
-      id: 'chatcmpl-mock-' + Date.now(),
+      id: `chatcmpl-mock-${Date.now()}`,
       object: 'chat.completion',
       created: Math.floor(Date.now() / 1000),
       model: (body.model as string) ?? DEFAULT_MODEL,
@@ -255,10 +242,8 @@ export const post = async (
     Authorization: `Bearer ${apiKey}`,
     'Content-Type': 'application/json',
   };
-  if (process.env.OPENROUTER_REFERER)
-    headers['HTTP-Referer'] = process.env.OPENROUTER_REFERER;
-  if (process.env.OPENROUTER_TITLE)
-    headers['X-Title'] = process.env.OPENROUTER_TITLE;
+  if (process.env.OPENROUTER_REFERER) headers['HTTP-Referer'] = process.env.OPENROUTER_REFERER;
+  if (process.env.OPENROUTER_TITLE) headers['X-Title'] = process.env.OPENROUTER_TITLE;
 
   const payload = {
     model: body.model ?? DEFAULT_MODEL,

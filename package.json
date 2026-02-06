@@ -16,9 +16,10 @@
     "test:watch": "rstest --watch",
     "test:coverage": "rstest --coverage",
     "test:browser:install": "npx playwright install chromium",
-    "lint": "rslint src server mock",
-    "lint:fix": "rslint --fix src server mock",
-    "check": "npm run lint && tsc --noEmit",
+    "lint": "biome check",
+    "lint:fix": "biome check --fix",
+    "format": "biome format --write",
+    "check": "biome check && tsc --noEmit",
     "likec4": "likec4 serve likec4",
     "likec4:build": "likec4 build likec4 -o likec4/dist --base ${LIKEC4_BASE:-/architecture/}"
   },
@@ -31,10 +32,10 @@
     "react-router": "^7.6.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.3.14",
     "@playwright/test": "^1.50.2",
     "@rsbuild/core": "^1.4.3",
     "@rsbuild/plugin-react": "^1.4.5",
-    "@rslint/core": "^0.2.0",
     "@rstest/browser": "^0.8.1",
     "@rstest/browser-react": "^0.8.1",
     "@rstest/core": "^0.8.1",

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
 import OpenAI from 'openai';
+import type React from 'react';
+import { useState } from 'react';
 import Counter from '../components/Counter';
 
 /** Token from auth/SSO session — wire your auth provider here. No keys stored in frontend. */
@@ -50,12 +51,8 @@ const Page: React.FC = () => {
       });
 
       // Add assistant response to the conversation
-      const assistantContent =
-        completion.choices[0]?.message?.content ?? '(no response)';
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: assistantContent },
-      ]);
+      const assistantContent = completion.choices[0]?.message?.content ?? '(no response)';
+      setMessages((prev) => [...prev, { role: 'assistant', content: assistantContent }]);
 
       setPayload(completion);
       setStatus('done');
@@ -145,8 +142,7 @@ const Page: React.FC = () => {
                 style={{
                   padding: '0.75rem 1rem',
                   background: msg.role === 'user' ? '#e3f2fd' : '#f5f5f5',
-                  borderBottom:
-                    idx < messages.length - 1 ? '1px solid #ddd' : 'none',
+                  borderBottom: idx < messages.length - 1 ? '1px solid #ddd' : 'none',
                 }}
               >
                 <strong

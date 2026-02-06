@@ -7,11 +7,9 @@ const getSendButton = () =>
     btn.textContent?.includes('Send'),
   ) as HTMLButtonElement | undefined;
 
-const getStatus = () =>
-  document.body.textContent?.match(/Status:\s*(\w+)/)?.[1];
+const getStatus = () => document.body.textContent?.match(/Status:\s*(\w+)/)?.[1];
 
-const getTextarea = () =>
-  document.querySelector('textarea') as HTMLTextAreaElement | null;
+const getTextarea = () => document.querySelector('textarea') as HTMLTextAreaElement | null;
 
 test('renders send button and textarea', async () => {
   await render(<Page />);
@@ -30,7 +28,7 @@ test('clicking send updates status to running and shows user message', async () 
   expect(button).toBeDefined();
   expect(getStatus()).toBe('idle');
 
-  button!.click();
+  button?.click();
 
   // Status should change to 'running' immediately on click
   // Use polling since state update is async
