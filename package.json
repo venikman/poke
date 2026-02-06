@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "npm run dev:api & npm run dev:fe",
     "dev:fe": "rsbuild dev",
-    "dev:api": "tsx --watch server/index.ts",
+    "dev:api": "tsx --watch server/main.ts",
     "dev:mock": "tsx mock/mock-server.ts",
     "build": "rsbuild build && npm run likec4:build",
-    "start": "NODE_ENV=production tsx server/index.ts",
+    "start": "NODE_ENV=production tsx server/main.ts",
     "test": "rstest --project api",
     "test:browser": "rstest --project browser",
     "test:all": "rstest --project api && rstest --project browser",
@@ -25,11 +25,13 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.14.0",
+    "@react-router/dev": "^7.13.0",
     "hono": "^4.7.10",
     "openai": "^6.17.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "react-router": "^7.6.1"
+    "react-router": "^7.6.1",
+    "rsbuild-plugin-react-router": "^0.1.1"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.14",

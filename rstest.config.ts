@@ -8,7 +8,7 @@ export default defineConfig({
     {
       name: 'browser',
       globals: true,
-      include: ['src/**/*.browser.test.tsx'],
+      include: ['app/**/*.browser.test.tsx'],
       plugins: [pluginReact()],
       browser: {
         enabled: true,

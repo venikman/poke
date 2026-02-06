@@ -32,7 +32,24 @@ type ChatRequest = {
   max_tokens?: number;
 };
 
-const generateMockCompletion = (request: ChatRequest): Record<string, unknown> => {
+type MockChatCompletion = {
+  id: string;
+  object: 'chat.completion';
+  created: number;
+  model: string;
+  choices: Array<{
+    index: number;
+    message: { role: string; content: string };
+    finish_reason: string;
+  }>;
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+};
+
+const generateMockCompletion = (request: ChatRequest): MockChatCompletion => {
   const lastUserMsg = [...request.messages].reverse().find((m) => m.role === 'user');
   const userContent = (lastUserMsg?.content ?? '').toLowerCase();
 
@@ -169,7 +186,7 @@ const handleMockRequest = async (req: Request): Promise<Response> => {
         const response = generateMockCompletion(body);
 
         // Log the outgoing response
-        const responseContent = (response.choices as any)?.[0]?.message?.content ?? '';
+        const responseContent = response.choices[0]?.message?.content ?? '';
         const truncatedResponse =
           responseContent.length > 200 ? `${responseContent.slice(0, 200)}...` : responseContent;
         console.log('┌─────────────────────────────────────────────────────────────');

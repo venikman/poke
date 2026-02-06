@@ -17,15 +17,24 @@ const baseURL =
 const DEFAULT_PROMPT =
   'Analyze the following normalized numeric data and provide a concise summary: -1.22, 0, 1.22';
 
-type Message = { role: 'user' | 'assistant'; content: string };
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ApiPayload = any;
+type ApiPayload = unknown;
+
+type UiMessage = { id: string; role: 'user' | 'assistant'; content: string };
+
+const makeMessageId = (): string => {
+  const cryptoObj = (
+    globalThis as typeof globalThis & {
+      crypto?: { randomUUID?: () => string };
+    }
+  ).crypto;
+  return cryptoObj?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
 
 const Page: React.FC = () => {
   const [status, setStatus] = useState<string>('idle');
   const [prompt, setPrompt] = useState<string>(DEFAULT_PROMPT);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [payload, setPayload] = useState<ApiPayload>(null);
+  const [messages, setMessages] = useState<UiMessage[]>([]);
+  const [payload, setPayload] = useState<ApiPayload | null>(null);
 
   const runInference = async () => {
     if (!prompt.trim()) return;
@@ -34,8 +43,9 @@ const Page: React.FC = () => {
     setPayload(null);
 
     // Add user message to the conversation
-    const userMessage: Message = { role: 'user', content: prompt };
-    setMessages((prev) => [...prev, userMessage]);
+    const userMessageApi = { role: 'user' as const, content: prompt };
+    const userMessageUi: UiMessage = { id: makeMessageId(), ...userMessageApi };
+    setMessages((prev) => [...prev, userMessageUi]);
 
     const token = getAuthToken();
     const openai = new OpenAI({
@@ -47,24 +57,28 @@ const Page: React.FC = () => {
     try {
       const completion = await openai.chat.completions.create({
         model: 'x-ai/grok-4.1-fast',
-        messages: [userMessage],
+        messages: [userMessageApi],
       });
 
       // Add assistant response to the conversation
       const assistantContent = completion.choices[0]?.message?.content ?? '(no response)';
-      setMessages((prev) => [...prev, { role: 'assistant', content: assistantContent }]);
+      const assistantMessageUi: UiMessage = {
+        id: makeMessageId(),
+        role: 'assistant',
+        content: assistantContent,
+      };
+      setMessages((prev) => [...prev, assistantMessageUi]);
 
       setPayload(completion);
       setStatus('done');
     } catch (error) {
       setStatus('error');
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        },
-      ]);
+      const errorMessageUi: UiMessage = {
+        id: makeMessageId(),
+        role: 'assistant',
+        content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
+      setMessages((prev) => [...prev, errorMessageUi]);
       setPayload({
         ok: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -138,7 +152,7 @@ const Page: React.FC = () => {
           >
             {messages.map((msg, idx) => (
               <div
-                key={idx}
+                key={msg.id}
                 style={{
                   padding: '0.75rem 1rem',
                   background: msg.role === 'user' ? '#e3f2fd' : '#f5f5f5',
@@ -167,7 +181,7 @@ const Page: React.FC = () => {
         )}
 
         {/* Raw response (collapsible) */}
-        {payload && (
+        {payload !== null && (
           <details style={{ maxWidth: '600px' }}>
             <summary style={{ cursor: 'pointer', marginBottom: '0.5rem' }}>
               Raw API Response

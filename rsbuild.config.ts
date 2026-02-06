@@ -1,17 +1,9 @@
 import { defineConfig } from '@rsbuild/core';
 import { pluginReact } from '@rsbuild/plugin-react';
+import { pluginReactRouter } from 'rsbuild-plugin-react-router';
 
 export default defineConfig({
-  plugins: [pluginReact()],
-  source: {
-    entry: { index: './src/main.tsx' },
-  },
-  html: {
-    template: './src/index.html',
-  },
-  output: {
-    distPath: { root: 'dist' },
-  },
+  plugins: [pluginReactRouter(), pluginReact()],
   server: {
     port: 5173,
     proxy: {

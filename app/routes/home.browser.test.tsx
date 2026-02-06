@@ -1,5 +1,5 @@
 import { render } from '@rstest/browser-react';
-import Page from './page';
+import Page from './home';
 
 /** Find the Send Message button specifically (not Counter buttons) */
 const getSendButton = () =>

@@ -61,9 +61,9 @@ app.get('/architecture', (c) => c.redirect('/architecture/'));
 
 // Production: serve static files
 if (process.env.NODE_ENV === 'production') {
-  app.use('/*', serveStatic({ root: './dist' }));
+  app.use('/*', serveStatic({ root: './build/client' }));
   // SPA fallback - serve index.html for all non-API routes
-  app.get('*', serveStatic({ path: './dist/index.html' }));
+  app.get('*', serveStatic({ path: './build/client/index.html' }));
 }
 
 const port = parseInt(process.env.PORT || '3001', 10);
