@@ -1,14 +1,16 @@
 {
-  "name": "full-stack-ai-rs-template",
+  "name": "full-stack-rs-hello-world",
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=24.13.0"
+  },
   "scripts": {
     "dev": "npm run dev:api & npm run dev:fe",
     "dev:fe": "rsbuild dev",
     "dev:api": "tsx --watch server/main.ts",
-    "dev:mock": "tsx mock/mock-server.ts",
-    "build": "rsbuild build && npm run likec4:build",
+    "build": "rsbuild build",
     "start": "NODE_ENV=production tsx server/main.ts",
     "test": "rstest --project api",
     "test:browser": "rstest --project browser",
@@ -19,33 +21,30 @@
     "lint": "biome check",
     "lint:fix": "biome check --fix",
     "format": "biome format --write",
-    "check": "biome check && tsc --noEmit",
-    "likec4": "likec4 serve likec4",
-    "likec4:build": "likec4 build likec4 -o likec4/dist --base ${LIKEC4_BASE:-/architecture/}"
+    "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run typecheck"
   },
   "dependencies": {
-    "@hono/node-server": "^1.14.0",
-    "@react-router/dev": "^7.13.0",
-    "hono": "^4.7.10",
-    "openai": "^6.17.0",
+    "@hono/node-server": "^1.19.10",
+    "hono": "^4.12.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "react-router": "^7.6.1",
-    "rsbuild-plugin-react-router": "^0.1.1"
+    "react-router": "^7.13.1",
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.14",
-    "@playwright/test": "^1.50.2",
-    "@rsbuild/core": "^1.4.3",
+    "@biomejs/biome": "^2.4.5",
+    "@playwright/test": "^1.58.2",
+    "@react-router/dev": "^7.13.1",
+    "@rsbuild/core": "^1.7.3",
     "@rsbuild/plugin-react": "^1.4.5",
-    "@rstest/browser": "^0.8.1",
-    "@rstest/browser-react": "^0.8.1",
-    "@rstest/core": "^0.8.1",
-    "@types/node": "^22.15.30",
-    "@types/react": "^19.2.10",
+    "@rstest/browser": "^0.9.0",
+    "@rstest/browser-react": "^0.9.0",
+    "@rstest/core": "^0.9.0",
+    "@types/node": "^25.3.3",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "likec4": "^1.48.0",
-    "tsx": "^4.19.4",
+    "rsbuild-plugin-react-router": "^0.1.1",
     "typescript": "^5.9.3"
   }
 }

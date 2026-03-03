@@ -8,7 +8,7 @@ export default function Root() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <Meta />
         <Links />
-        <title>Full-Stack AI RS Template</title>
+        <title>RS Stack Hello World</title>
       </head>
       <body>
         <Outlet />

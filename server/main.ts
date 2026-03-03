@@ -1,6 +1,6 @@
 /**
  * Hono API server with security hardening (Node.js runtime).
- * - Serves API routes at /api/v1/chat/*
+ * - Serves API routes at /api/v1/*
  * - In production, also serves static files from dist/
  */
 
@@ -9,7 +9,7 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { type Context, Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
-import { chatRoutes } from './routes/chat.js';
+import { helloRoutes } from './routes/hello.js';
 
 const app = new Hono();
 
@@ -47,17 +47,7 @@ app.use('/api/*', async (c: Context, next) => {
 });
 
 // API routes
-app.route('/api/v1/chat', chatRoutes);
-
-// Architecture diagrams (LikeC4 static site)
-app.use(
-  '/architecture/*',
-  serveStatic({
-    root: './likec4/dist',
-    rewriteRequestPath: (path) => path.replace('/architecture', ''),
-  }),
-);
-app.get('/architecture', (c) => c.redirect('/architecture/'));
+app.route('/api/v1', helloRoutes);
 
 // Production: serve static files
 if (process.env.NODE_ENV === 'production') {

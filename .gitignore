@@ -1,10 +1,17 @@
 # Dependencies
 node_modules/
 
+# Build output
+build/
+dist/
+
+# Generated types
+.react-router/
+.superset/
+
 # OS
 .DS_Store
 .modern/
-dist/
 coverage/
 *.log
 .npmrc

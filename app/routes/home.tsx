@@ -1,206 +1,59 @@
-import OpenAI from 'openai';
-import type React from 'react';
-import { useState } from 'react';
-import Counter from '../components/Counter';
+import { useEffect, useState } from 'react';
 
-/** Token from auth/SSO session — wire your auth provider here. No keys stored in frontend. */
-function getAuthToken(): string | null {
-  // TODO: return token from auth context / SSO session when wired
-  return null;
-}
+const FALLBACK_MESSAGE = 'Hello World from RS Stack';
 
-const baseURL =
-  typeof window !== 'undefined'
-    ? `${window.location.origin}/api/v1`
-    : 'http://localhost:8080/api/v1';
-
-const DEFAULT_PROMPT =
-  'Analyze the following normalized numeric data and provide a concise summary: -1.22, 0, 1.22';
-
-type ApiPayload = unknown;
-
-type UiMessage = { id: string; role: 'user' | 'assistant'; content: string };
-
-const makeMessageId = (): string => {
-  const cryptoObj = (
-    globalThis as typeof globalThis & {
-      crypto?: { randomUUID?: () => string };
-    }
-  ).crypto;
-  return cryptoObj?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+type ApiHelloPayload = {
+  message?: string;
 };
 
-const Page: React.FC = () => {
-  const [status, setStatus] = useState<string>('idle');
-  const [prompt, setPrompt] = useState<string>(DEFAULT_PROMPT);
-  const [messages, setMessages] = useState<UiMessage[]>([]);
-  const [payload, setPayload] = useState<ApiPayload | null>(null);
+export default function HomePage() {
+  const [apiMessage, setApiMessage] = useState('Loading...');
+  const [status, setStatus] = useState<'loading' | 'ready' | 'fallback'>('loading');
 
-  const runInference = async () => {
-    if (!prompt.trim()) return;
+  useEffect(() => {
+    let active = true;
 
-    setStatus('running');
-    setPayload(null);
+    const loadMessage = async () => {
+      try {
+        const response = await fetch('/api/v1/hello');
+        if (!response.ok) {
+          throw new Error(`Unexpected status: ${response.status}`);
+        }
 
-    // Add user message to the conversation
-    const userMessageApi = { role: 'user' as const, content: prompt };
-    const userMessageUi: UiMessage = { id: makeMessageId(), ...userMessageApi };
-    setMessages((prev) => [...prev, userMessageUi]);
+        const payload = (await response.json()) as ApiHelloPayload;
+        if (!payload.message) {
+          throw new Error('Missing "message" in API response');
+        }
 
-    const token = getAuthToken();
-    const openai = new OpenAI({
-      baseURL,
-      apiKey: token ?? 'dummy', // token from auth/SSO; backend validates if API_TOKEN set
-      dangerouslyAllowBrowser: true,
-    });
+        if (active) {
+          setApiMessage(payload.message);
+          setStatus('ready');
+        }
+      } catch {
+        if (active) {
+          setApiMessage(FALLBACK_MESSAGE);
+          setStatus('fallback');
+        }
+      }
+    };
 
-    try {
-      const completion = await openai.chat.completions.create({
-        model: 'x-ai/grok-4.1-fast',
-        messages: [userMessageApi],
-      });
+    void loadMessage();
 
-      // Add assistant response to the conversation
-      const assistantContent = completion.choices[0]?.message?.content ?? '(no response)';
-      const assistantMessageUi: UiMessage = {
-        id: makeMessageId(),
-        role: 'assistant',
-        content: assistantContent,
-      };
-      setMessages((prev) => [...prev, assistantMessageUi]);
-
-      setPayload(completion);
-      setStatus('done');
-    } catch (error) {
-      setStatus('error');
-      const errorMessageUi: UiMessage = {
-        id: makeMessageId(),
-        role: 'assistant',
-        content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      };
-      setMessages((prev) => [...prev, errorMessageUi]);
-      setPayload({
-        ok: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
-  };
-
-  const clearConversation = () => {
-    setMessages([]);
-    setPayload(null);
-    setStatus('idle');
-  };
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <main style={{ fontFamily: 'system-ui, sans-serif', padding: '2rem' }}>
-      <h1>Full-Stack AI RS Template</h1>
-      <p>Rsbuild + Hono + React Router + Rstest + OpenRouter (Grok)</p>
-
-      <section style={{ marginBottom: '2rem' }}>
-        <h2>Counter Demo</h2>
-        <Counter initialValue={0} min={0} max={100} step={1} />
-      </section>
+      <h1>Hello World</h1>
+      <p>RS Stack starter: React Router + Rsbuild + Hono + Rstest.</p>
 
       <section>
-        <h2>AI Inference</h2>
-
-        {/* Message input */}
-        <div style={{ marginBottom: '1rem' }}>
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Enter your message..."
-            rows={3}
-            style={{
-              width: '100%',
-              maxWidth: '600px',
-              padding: '0.5rem',
-              fontFamily: 'inherit',
-              fontSize: '1rem',
-              borderRadius: '4px',
-              border: '1px solid #ccc',
-            }}
-          />
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-          <button
-            type="button"
-            onClick={runInference}
-            disabled={status === 'running' || !prompt.trim()}
-          >
-            {status === 'running' ? 'Sending...' : 'Send Message'}
-          </button>
-          <button type="button" onClick={clearConversation}>
-            Clear
-          </button>
-        </div>
-
+        <h2>API Message</h2>
+        <p data-testid="api-message">{apiMessage}</p>
         <p>Status: {status}</p>
-
-        {/* Conversation display */}
-        {messages.length > 0 && (
-          <div
-            style={{
-              maxWidth: '600px',
-              border: '1px solid #ddd',
-              borderRadius: '8px',
-              overflow: 'hidden',
-              marginBottom: '1rem',
-            }}
-          >
-            {messages.map((msg, idx) => (
-              <div
-                key={msg.id}
-                style={{
-                  padding: '0.75rem 1rem',
-                  background: msg.role === 'user' ? '#e3f2fd' : '#f5f5f5',
-                  borderBottom: idx < messages.length - 1 ? '1px solid #ddd' : 'none',
-                }}
-              >
-                <strong
-                  style={{
-                    color: msg.role === 'user' ? '#1565c0' : '#424242',
-                  }}
-                >
-                  {msg.role === 'user' ? '📤 You' : '🤖 Assistant'}:
-                </strong>
-                <div
-                  style={{
-                    marginTop: '0.25rem',
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  {msg.content}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Raw response (collapsible) */}
-        {payload !== null && (
-          <details style={{ maxWidth: '600px' }}>
-            <summary style={{ cursor: 'pointer', marginBottom: '0.5rem' }}>
-              Raw API Response
-            </summary>
-            <pre
-              style={{
-                background: '#f6f6f6',
-                padding: '1rem',
-                overflow: 'auto',
-                fontSize: '0.85rem',
-              }}
-            >
-              {JSON.stringify(payload, null, 2)}
-            </pre>
-          </details>
-        )}
       </section>
     </main>
   );
-};
-
-export default Page;
+}
