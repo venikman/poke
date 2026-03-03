@@ -13,5 +13,6 @@ dist/
 .DS_Store
 .modern/
 coverage/
+test-results/
 *.log
 .npmrc

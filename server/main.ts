@@ -51,9 +51,10 @@ app.route('/api/v1', helloRoutes);
 
 // Production: serve static files
 if (process.env.NODE_ENV === 'production') {
-  app.use('/*', serveStatic({ root: './build/client' }));
-  // SPA fallback - serve index.html for all non-API routes
-  app.get('*', serveStatic({ path: './build/client/index.html' }));
+  // Serve static build assets directly.
+  app.use('/static/*', serveStatic({ root: './build/client' }));
+  // SPA fallback - serve client entry for all app routes.
+  app.get('*', serveStatic({ path: './build/client/entry.client.html' }));
 }
 
 const port = parseInt(process.env.PORT || '3001', 10);

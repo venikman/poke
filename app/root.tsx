@@ -1,4 +1,5 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
+import ClientThemeProvider from './components/ClientThemeProvider';
 
 export default function Root() {
   return (
@@ -8,10 +9,12 @@ export default function Root() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <Meta />
         <Links />
-        <title>RS Stack Hello World</title>
+        <title>User Dashboard</title>
       </head>
       <body>
-        <Outlet />
+        <ClientThemeProvider>
+          <Outlet />
+        </ClientThemeProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

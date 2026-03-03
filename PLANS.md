@@ -1,71 +1,75 @@
-# ExecPlan: RS Stack Hello World + Dependency Upgrades
+# ExecPlan: Availity Users Dashboard via Strict TDD
 ## Goal
-Replace AI chat functionality with a minimal Hello World full-stack example, and upgrade project dependencies to their latest versions.
+Replace the Hello World home view with a users dashboard table built with `@availity/element` (hardcoded data, client sorting + pagination), while keeping one backend example endpoint (`GET /api/v1/hello`).
 
 ## Success criteria (observable)
-- No AI chat route, AI SDK usage, or AI environment variables remain in app/server/docs.
-- API exposes a simple Hello World endpoint and tests cover it.
-- Home page is a simple Hello World RS stack example with passing browser tests.
-- Dependencies are upgraded to latest available versions and lockfile is updated.
+- Home route renders `User Dashboard` and `Hardcoded users dataset with client-side sorting and pagination.`
+- Home route uses Availity table primitives from `@availity/element`.
+- Home route shows hardcoded users dataset (>=12 rows) with columns: Name, Email, Role, Status, Last Active.
+- Client-side sorting works for Name, Email, Role, Last Active.
+- Pagination defaults to 5 rows and supports [5, 10, 25], resetting page to 0 when rows per page changes.
+- Browser tests cover the approved 8 scenarios and pass.
+- Existing API test for `/hello` remains passing and unchanged in behavior.
 - `npm run test:all` and `npm run check` pass.
 
 ## Non-goals
-- Introducing new product features beyond Hello World.
-- Redesigning the Counter component behavior.
-- Adding authentication or external integrations.
+- No backend/database changes beyond preserving the existing hello endpoint.
+- No KPI widgets or additional dashboard modules.
+- No removal/refactor of Counter component/tests.
 
 ## Constraints (sandbox, network, OS, time, dependencies)
-- Sandbox: `workspace-write`.
-- Network: restricted in sandbox; npm registry actions may require escalated execution.
-- OS: macOS (Darwin), zsh shell.
-- Package manager: npm with existing `package-lock.json`.
+- Sandbox: danger-full-access.
+- Network: enabled (required for npm install).
+- OS: macOS (Darwin), shell zsh.
+- Package manager: npm + existing lockfile.
+- Process: strict Red-Green-Refactor, one test at a time.
 
 ## Repo map (key files/dirs)
 - `package.json`, `package-lock.json`
-- `server/main.ts`
-- `server/routes/hello.ts`, `server/routes/hello.test.ts`
-- `app/routes/home.tsx`, `app/routes/home.browser.test.tsx`
 - `app/root.tsx`
-- `README.md`
+- `app/routes/home.tsx`
+- `app/routes/home.browser.test.tsx`
+- `server/routes/hello.ts`
+- `server/routes/hello.test.ts`
 
 ## Milestones
-1. Define target behavior with tests (RED)
+1. Dependency + root setup
    - Steps
-   - Rewrite API test to assert Hello endpoint response shape/content.
-   - Rewrite browser test to assert minimal Hello World UI.
-   - Validation: `npm run test`
-   - Expected signals: API tests fail for missing/new behavior.
-   - Rollback: `git checkout -- server/routes/*.test.ts app/routes/home.browser.test.tsx`
-2. Implement Hello World replacement (GREEN)
+   - Install `@availity/element`, `@emotion/react`, `@emotion/styled`.
+   - Wrap app with `ThemeProvider` in `app/root.tsx` and update page title.
+   - Validation: `npm run typecheck`
+   - Expected signals: Type check passes with new imports.
+   - Rollback: restore `package.json`, `package-lock.json`, `app/root.tsx`.
+
+2. Browser TDD sequence for home dashboard
    - Steps
-   - Replace chat route with hello route and wire in `server/main.ts`.
-   - Simplify home route to Hello World example and remove AI logic.
-   - Update root title and docs/scripts to remove AI references.
-   - Validation: `npm run test:all`
-   - Expected signals: API + browser tests pass.
-   - Rollback: revert touched app/server/doc files.
-3. Upgrade dependencies and refresh lockfile
+   - For each approved test in order:
+     1) add one test; 2) run focused test and confirm RED; 3) implement minimal code; 4) rerun focused test GREEN; 5) run file-level browser tests.
+   - Validation per step: `npx rstest --project browser --include "app/routes/home.browser.test.tsx" -t "<name>"` then `npx rstest --project browser --include "app/routes/home.browser.test.tsx"`
+   - Expected signals: Each test transitions RED->GREEN without unrelated regressions.
+   - Rollback: revert latest test/code chunk if unexpected behavior emerges.
+
+3. Final regression + API preservation
    - Steps
-   - Upgrade top-level deps/devDeps to latest, remove unused entries.
-   - Run install to refresh `package-lock.json`.
-   - Validation: `npm outdated --json`, `npm run check`
-   - Expected signals: no outdated direct dependencies; check passes.
-   - Rollback: restore `package.json` and `package-lock.json` from git.
-4. Final verification and cleanup
-   - Steps
-   - Confirm no residual AI references.
-   - Run full test/check commands and capture outputs.
-   - Validation: `rg -n "OpenAI|OpenRouter|GROK|chat/completions|/api/v1/chat" -S`, `npm run test:all`, `npm run check`
-   - Expected signals: no matches in source/docs (except historical AGENTS content), all validations pass.
-   - Rollback: revert last milestone commit if regressions appear.
+   - Confirm `server/routes/hello.ts` behavior unchanged.
+   - Run API test and full suite/check.
+   - Validation: `npx rstest --project api --include "server/routes/hello.test.ts"`, `npm run test:all`, `npm run check`
+   - Expected signals: all pass.
+   - Rollback: revert last milestone edits.
 
 ## Decisions log (why changes)
-- Keep Counter demo to preserve existing component/test value while removing AI complexity.
-- Provide explicit API hello endpoint to keep full-stack example (frontend + backend) in place.
+- Use `@availity/element` package imports only (not hand-rolled table primitives) to satisfy project library discipline.
+- Keep API endpoint as backend example but remove frontend dependence so dashboard data remains hardcoded.
+- Implement sortable/paginated table as requested, with deterministic test fixtures.
 
 ## Progress log (ISO-8601 timestamps)
-- 2026-03-03T13:19:00-05:00: Plan created. Next: Milestone 1 (write failing tests for Hello World behavior).
-- 2026-03-03T13:27:00-05:00: Milestone 1 complete. RED confirmed (`npm run test` failed with expected 404 for `/hello`; browser build failed on legacy `openai` import).
-- 2026-03-03T13:35:00-05:00: Milestone 2 complete. Implemented `hello` route + frontend Hello World replacement. `npm run test:all` passed.
-- 2026-03-03T13:40:00-05:00: Milestone 3 complete. Upgraded all direct dependencies to latest; lockfile refreshed; `npm outdated --json` returned `{}`.
-- 2026-03-03T13:43:00-05:00: Milestone 4 complete. Final validation clean: no source/docs AI references, `npm run test:all` and `npm run check` passed.
+- 2026-03-03T10:56:00-05:00: Plan reset for dashboard implementation. Next: Milestone 1 dependency/root setup.
+- 2026-03-03T10:59:00-05:00: Milestone 1 complete. Installed `@availity/element` + emotion peers and wired `ThemeProvider` in `app/root.tsx`.
+- 2026-03-03T11:04:00-05:00: Milestone 2 complete via strict TDD. Added 8 browser tests first, verified RED->GREEN one-by-one, and implemented dashboard table with sorting + pagination.
+- 2026-03-03T11:06:00-05:00: Milestone 3 complete. Validation passed: `npx rstest --project api --include \"server/routes/hello.test.ts\"`, `npm run test:all`, `npm run check`.
+- 2026-03-03T11:12:00-05:00: Post-validation hardening. Resolved `window is not defined` build failure by moving Availity imports behind a client-only home wrapper (`npm run build` now passes).
+- 2026-03-03T12:56:00-05:00: New mini-milestone started: replace `server/dev-fe-server.test.ts` with a simpler Playwright E2E regression for `/` (dev FE reachable, not-found absent, dashboard visible) and wire into test scripts.
+- 2026-03-03T13:06:00-05:00: Mini-milestone complete. Replaced complex Node spawn/fetch dev FE test with Playwright E2E (`e2e/dev-fe.spec.ts`), added `playwright.config.ts`, removed `server/dev-fe-server.test.ts`, and wired `test:e2e` into `test:all` (all tests + check passing).
+- 2026-03-03T13:25:00-05:00: Fixed browser runtime `Unexpected token 'export'` by enabling module script loading and replacing `HydratedRouter` bootstrap with SPA `createBrowserRouter` mount in `entry.client.tsx`. Updated E2E to verify `npm run dev` brings up frontend + API and dashboard view.
+- 2026-03-03T13:40:00-05:00: Resolved Rsbuild warning `Can't resolve 'supports-color'` by adding `supports-color` dev dependency; verified by log-check script plus `npm run test:all` and `npm run check`.
+- 2026-03-03T13:48:00-05:00: Removed direct `supports-color` dependency per user request and suppressed this specific optional-module warning via `tools.rspack.ignoreWarnings` in `rsbuild.config.ts`; validated warning absence and full suite green.
