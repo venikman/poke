@@ -1,75 +1,72 @@
-# ExecPlan: Availity Users Dashboard via Strict TDD
+# ExecPlan: TS Functional Blueprint Skill + Dashboard Domain Refactor
 ## Goal
-Replace the Hello World home view with a users dashboard table built with `@availity/element` (hardcoded data, client sorting + pagination), while keeping one backend example endpoint (`GET /api/v1/hello`).
+Create a reusable repo skill from the F#-inspired TypeScript article and apply it to the users dashboard domain model with strict red-green-refactor for the new domain behavior.
 
 ## Success criteria (observable)
-- Home route renders `User Dashboard` and `Hardcoded users dataset with client-side sorting and pagination.`
-- Home route uses Availity table primitives from `@availity/element`.
-- Home route shows hardcoded users dataset (>=12 rows) with columns: Name, Email, Role, Status, Last Active.
-- Client-side sorting works for Name, Email, Role, Last Active.
-- Pagination defaults to 5 rows and supports [5, 10, 25], resetting page to 0 when rows per page changes.
-- Browser tests cover the approved 8 scenarios and pass.
-- Existing API test for `/hello` remains passing and unchanged in behavior.
-- `npm run test:all` and `npm run check` pass.
+- Repo has a local skill at `.codex/skills/ts-functional-blueprint/SKILL.md` with actionable rules, prompt header, and review checklist.
+- Dashboard domain logic uses branded IDs, immutable records, and a discriminated-union sort state.
+- Sorting logic is implemented as pure functions with exhaustive `satisfies never` handling.
+- New automated test covers sort-state transitions and sorted output behavior.
+- Existing dashboard browser tests still pass.
+- `npm run test:browser` and `npm run check` pass.
 
 ## Non-goals
-- No backend/database changes beyond preserving the existing hello endpoint.
-- No KPI widgets or additional dashboard modules.
-- No removal/refactor of Counter component/tests.
+- No UI redesign.
+- No backend contract changes.
+- No dependency upgrades.
 
 ## Constraints (sandbox, network, OS, time, dependencies)
 - Sandbox: danger-full-access.
-- Network: enabled (required for npm install).
-- OS: macOS (Darwin), shell zsh.
-- Package manager: npm + existing lockfile.
-- Process: strict Red-Green-Refactor, one test at a time.
+- Network: enabled but not required.
+- OS: Linux container.
+- Tooling: npm, rstest, biome, TypeScript strict mode.
 
 ## Repo map (key files/dirs)
-- `package.json`, `package-lock.json`
-- `app/root.tsx`
-- `app/routes/home.tsx`
+- `app/components/UserDashboardContent.tsx`
+- `app/domain/*` (new)
 - `app/routes/home.browser.test.tsx`
-- `server/routes/hello.ts`
-- `server/routes/hello.test.ts`
+- `.codex/skills/ts-functional-blueprint/SKILL.md` (new)
+- `README.md`
 
 ## Milestones
-1. Dependency + root setup
+1. Plan and red test setup
    - Steps
-   - Install `@availity/element`, `@emotion/react`, `@emotion/styled`.
-   - Wrap app with `ThemeProvider` in `app/root.tsx` and update page title.
-   - Validation: `npm run typecheck`
-   - Expected signals: Type check passes with new imports.
-   - Rollback: restore `package.json`, `package-lock.json`, `app/root.tsx`.
+     - Update this ExecPlan.
+     - Add a new failing browser test for domain sorting/state transitions.
+   - Validation: `npx rstest --project browser --include "app/domain/userDashboard.browser.test.tsx"`
+   - Expected signals: fails before implementation (red).
+   - Rollback: remove new test file.
 
-2. Browser TDD sequence for home dashboard
+2. Implement functional domain model + wire component
    - Steps
-   - For each approved test in order:
-     1) add one test; 2) run focused test and confirm RED; 3) implement minimal code; 4) rerun focused test GREEN; 5) run file-level browser tests.
-   - Validation per step: `npx rstest --project browser --include "app/routes/home.browser.test.tsx" -t "<name>"` then `npx rstest --project browser --include "app/routes/home.browser.test.tsx"`
-   - Expected signals: Each test transitions RED->GREEN without unrelated regressions.
-   - Rollback: revert latest test/code chunk if unexpected behavior emerges.
+     - Add `app/domain/userDashboard.ts` with Brand, immutable user model, DU sort state, pure sort helpers.
+     - Refactor dashboard component to consume domain module.
+   - Validation:
+     - `npx rstest --project browser --include "app/domain/userDashboard.browser.test.tsx"`
+     - `npx rstest --project browser --include "app/routes/home.browser.test.tsx"`
+   - Expected signals: both pass (green).
+   - Rollback: revert domain and component edits.
 
-3. Final regression + API preservation
+3. Skill + docs + regression
    - Steps
-   - Confirm `server/routes/hello.ts` behavior unchanged.
-   - Run API test and full suite/check.
-   - Validation: `npx rstest --project api --include "server/routes/hello.test.ts"`, `npm run test:all`, `npm run check`
-   - Expected signals: all pass.
-   - Rollback: revert last milestone edits.
+     - Add `.codex/skills/ts-functional-blueprint/SKILL.md`.
+     - Add README pointer.
+     - Run browser tests and lint/type checks.
+   - Validation:
+     - `npm run test:browser`
+     - `npm run check`
+   - Expected signals: pass.
+   - Rollback: revert docs/skill changes.
 
 ## Decisions log (why changes)
-- Use `@availity/element` package imports only (not hand-rolled table primitives) to satisfy project library discipline.
-- Keep API endpoint as backend example but remove frontend dependence so dashboard data remains hardcoded.
-- Implement sortable/paginated table as requested, with deterministic test fixtures.
+- Keep domain logic separate from UI to preserve testability and composability.
+- Use `satisfies never` in DU switch defaults to force exhaustiveness at compile time.
+- Keep API unchanged; refactor is scoped to frontend domain modeling and team guidance.
 
 ## Progress log (ISO-8601 timestamps)
-- 2026-03-03T10:56:00-05:00: Plan reset for dashboard implementation. Next: Milestone 1 dependency/root setup.
-- 2026-03-03T10:59:00-05:00: Milestone 1 complete. Installed `@availity/element` + emotion peers and wired `ThemeProvider` in `app/root.tsx`.
-- 2026-03-03T11:04:00-05:00: Milestone 2 complete via strict TDD. Added 8 browser tests first, verified RED->GREEN one-by-one, and implemented dashboard table with sorting + pagination.
-- 2026-03-03T11:06:00-05:00: Milestone 3 complete. Validation passed: `npx rstest --project api --include \"server/routes/hello.test.ts\"`, `npm run test:all`, `npm run check`.
-- 2026-03-03T11:12:00-05:00: Post-validation hardening. Resolved `window is not defined` build failure by moving Availity imports behind a client-only home wrapper (`npm run build` now passes).
-- 2026-03-03T12:56:00-05:00: New mini-milestone started: replace `server/dev-fe-server.test.ts` with a simpler Playwright E2E regression for `/` (dev FE reachable, not-found absent, dashboard visible) and wire into test scripts.
-- 2026-03-03T13:06:00-05:00: Mini-milestone complete. Replaced complex Node spawn/fetch dev FE test with Playwright E2E (`e2e/dev-fe.spec.ts`), added `playwright.config.ts`, removed `server/dev-fe-server.test.ts`, and wired `test:e2e` into `test:all` (all tests + check passing).
-- 2026-03-03T13:25:00-05:00: Fixed browser runtime `Unexpected token 'export'` by enabling module script loading and replacing `HydratedRouter` bootstrap with SPA `createBrowserRouter` mount in `entry.client.tsx`. Updated E2E to verify `npm run dev` brings up frontend + API and dashboard view.
-- 2026-03-03T13:40:00-05:00: Resolved Rsbuild warning `Can't resolve 'supports-color'` by adding `supports-color` dev dependency; verified by log-check script plus `npm run test:all` and `npm run check`.
-- 2026-03-03T13:48:00-05:00: Removed direct `supports-color` dependency per user request and suppressed this specific optional-module warning via `tools.rspack.ignoreWarnings` in `rsbuild.config.ts`; validated warning absence and full suite green.
+- 2026-03-07T00:00:00Z: ExecPlan initialized. Next: add red test for domain sort-state behavior.
+
+- 2026-03-07T07:03:00Z: Milestone 1 complete. Added failing domain test (`app/domain/userDashboard.browser.test.tsx`) and observed RED due missing module.
+- 2026-03-07T07:07:00Z: Milestone 2 complete. Implemented `app/domain/userDashboard.ts` and refactored dashboard component to use DU sort-state + immutable domain model; domain tests GREEN.
+- 2026-03-07T07:10:00Z: Milestone 3 in progress. Added repo-local TS skill and README pointer; next run full browser + lint/type checks.
+- 2026-03-07T07:16:00Z: Milestone 3 complete. Added `.codex/skills/ts-functional-blueprint/SKILL.md`, updated README guidance, and validated `CI=true npm run test:browser` + `npm run check` both passing.

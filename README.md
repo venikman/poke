@@ -38,3 +38,13 @@ Example response:
 - `npm run test:browser` - browser tests
 - `npm run test:all` - full test suite
 - `npm run check` - lint + type check
+
+## LLM TypeScript Style Skill
+
+Use the repo-local skill `.codex/skills/ts-functional-blueprint/SKILL.md` when generating domain TypeScript with AI.
+
+Expected outputs:
+- discriminated unions with exhaustive `satisfies never` handling
+- branded IDs for domain identifiers
+- immutable `readonly` records and `ReadonlyArray` collections
+- pure module-level functions instead of classes

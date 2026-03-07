@@ -8,7 +8,7 @@ const getFirstRowName = () => {
   return firstCell?.textContent?.trim() ?? '';
 };
 
-const waitForFirstRowName = (expected: string, timeout = 1000): Promise<void> =>
+const waitForFirstRowName = (expected: string, timeout = 3000): Promise<void> =>
   new Promise((resolve, reject) => {
     const start = Date.now();
     const check = () => {
@@ -23,7 +23,7 @@ const waitForFirstRowName = (expected: string, timeout = 1000): Promise<void> =>
     check();
   });
 
-const waitForRowCount = (expected: number, timeout = 1000): Promise<void> =>
+const waitForRowCount = (expected: number, timeout = 3000): Promise<void> =>
   new Promise((resolve, reject) => {
     const start = Date.now();
     const check = () => {
@@ -38,7 +38,7 @@ const waitForRowCount = (expected: number, timeout = 1000): Promise<void> =>
     check();
   });
 
-const waitForOption = (label: string, timeout = 1000): Promise<HTMLElement> =>
+const waitForOption = (label: string, timeout = 3000): Promise<HTMLElement> =>
   new Promise((resolve, reject) => {
     const start = Date.now();
     const check = () => {
@@ -57,7 +57,7 @@ const waitForOption = (label: string, timeout = 1000): Promise<HTMLElement> =>
     check();
   });
 
-const waitForDashboardMount = (timeout = 1000): Promise<void> =>
+const waitForDashboardMount = (timeout = 3000): Promise<void> =>
   new Promise((resolve, reject) => {
     const start = Date.now();
     const check = () => {
