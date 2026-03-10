@@ -8,69 +8,75 @@ const getFirstRowName = () => {
   return firstCell?.textContent?.trim() ?? '';
 };
 
-const waitForFirstRowName = (expected: string, timeout = 3000): Promise<void> =>
+const waitForValue = <T,>(
+  getValue: () => T,
+  isReady: (value: T) => boolean,
+  getErrorMessage: (value: T) => string,
+  timeout = 3000,
+): Promise<T> =>
   new Promise((resolve, reject) => {
     const start = Date.now();
     const check = () => {
-      if (getFirstRowName() === expected) {
-        resolve();
+      const value = getValue();
+
+      if (isReady(value)) {
+        resolve(value);
       } else if (Date.now() - start > timeout) {
-        reject(new Error(`Expected first row name "${expected}", got "${getFirstRowName()}"`));
+        reject(new Error(getErrorMessage(value)));
       } else {
         requestAnimationFrame(check);
       }
     };
     check();
   });
+
+const waitForFirstRowName = (expected: string, timeout = 3000): Promise<void> =>
+  waitForValue(
+    getFirstRowName,
+    (name) => name === expected,
+    (name) => `Expected first row name "${expected}", got "${name}"`,
+    timeout,
+  ).then(() => undefined);
 
 const waitForRowCount = (expected: number, timeout = 3000): Promise<void> =>
-  new Promise((resolve, reject) => {
-    const start = Date.now();
-    const check = () => {
-      if (getRows().length === expected) {
-        resolve();
-      } else if (Date.now() - start > timeout) {
-        reject(new Error(`Expected row count "${expected}", got "${getRows().length}"`));
-      } else {
-        requestAnimationFrame(check);
-      }
-    };
-    check();
-  });
+  waitForValue(
+    () => getRows().length,
+    (rowCount) => rowCount === expected,
+    (rowCount) => `Expected row count "${expected}", got "${rowCount}"`,
+    timeout,
+  ).then(() => undefined);
 
 const waitForOption = (label: string, timeout = 3000): Promise<HTMLElement> =>
-  new Promise((resolve, reject) => {
-    const start = Date.now();
-    const check = () => {
-      const option = Array.from(document.querySelectorAll('[role="option"]')).find(
+  waitForValue(
+    () =>
+      Array.from(document.querySelectorAll<HTMLElement>('[role="option"]')).find(
         (node) => node.textContent?.trim() === label,
-      ) as HTMLElement | undefined;
-
-      if (option) {
-        resolve(option);
-      } else if (Date.now() - start > timeout) {
-        reject(new Error(`Expected option "${label}" to be present.`));
-      } else {
-        requestAnimationFrame(check);
-      }
-    };
-    check();
-  });
+      ),
+    (option): option is HTMLElement => option !== undefined,
+    () => `Expected option "${label}" to be present.`,
+    timeout,
+  ).then((option) => option as HTMLElement);
 
 const waitForDashboardMount = (timeout = 3000): Promise<void> =>
-  new Promise((resolve, reject) => {
-    const start = Date.now();
-    const check = () => {
-      if (document.querySelector('[data-testid="users-table"]')) {
-        resolve();
-      } else if (Date.now() - start > timeout) {
-        reject(new Error('Expected dashboard table to mount.'));
-      } else {
-        requestAnimationFrame(check);
-      }
-    };
-    check();
-  });
+  waitForValue(
+    () => document.querySelector('[data-testid="users-table"]'),
+    (table): table is Element => table !== null,
+    () => 'Expected dashboard table to mount.',
+    timeout,
+  ).then(() => undefined);
+
+const getPaginationButton = (container: Element | null, label: string): HTMLButtonElement | undefined =>
+  Array.from(container?.querySelectorAll('button') ?? []).find(
+    (button) =>
+      button.getAttribute('aria-label') === label || button.getAttribute('title') === label,
+  ) as HTMLButtonElement | undefined;
+
+test('renders dashboard table immediately on first render', async () => {
+  await render(<Page />);
+
+  expect(document.querySelector('[data-testid="users-dashboard"]')).not.toBeNull();
+  expect(document.querySelector('[data-testid="users-table"]')).not.toBeNull();
+});
 
 test('renders dashboard title and subtitle', async () => {
   await render(<Page />);
@@ -88,11 +94,9 @@ test('applies custom theme primary color to dashboard title', async () => {
   expect(getComputedStyle(title as HTMLElement).color).toBe('rgb(94, 169, 8)');
 });
 
-test('loads dashboard table after dashboard module resolves', async () => {
+test('does not rely on a delayed dashboard module mount', async () => {
   await render(<Page />);
-  const pageText = document.body.textContent ?? '';
-  expect(pageText).toContain('User Dashboard');
-  await waitForDashboardMount();
+
   expect(document.querySelector('[data-testid="users-table"]')).not.toBeNull();
 });
 
@@ -163,12 +167,10 @@ test('navigates to page 2 and shows next rows', async () => {
   const pagination = document.querySelector('[data-testid="users-pagination"]');
   expect(pagination).not.toBeNull();
 
-  const pageTwoButton = Array.from(pagination?.querySelectorAll('button') ?? []).find(
-    (button) => button.textContent?.trim() === '2',
-  ) as HTMLButtonElement | undefined;
+  const nextPageButton = getPaginationButton(pagination, 'Go to next page');
 
-  expect(pageTwoButton).not.toBeUndefined();
-  pageTwoButton?.click();
+  expect(nextPageButton).not.toBeUndefined();
+  nextPageButton?.click();
 
   await waitForFirstRowName('Gray Kim');
   expect(getFirstRowName()).toBe('Gray Kim');
@@ -181,11 +183,9 @@ test('changes rows per page to 10 and resets to first page', async () => {
   const pagination = document.querySelector('[data-testid="users-pagination"]');
   expect(pagination).not.toBeNull();
 
-  const pageTwoButton = Array.from(pagination?.querySelectorAll('button') ?? []).find(
-    (button) => button.textContent?.trim() === '2',
-  ) as HTMLButtonElement | undefined;
-  expect(pageTwoButton).not.toBeUndefined();
-  pageTwoButton?.click();
+  const nextPageButton = getPaginationButton(pagination, 'Go to next page');
+  expect(nextPageButton).not.toBeUndefined();
+  nextPageButton?.click();
   await waitForFirstRowName('Gray Kim');
 
   const rowsPerPageCombobox = pagination?.querySelector('[role="combobox"]') as HTMLElement | null;

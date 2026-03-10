@@ -1,16 +1,15 @@
-import {
-  Container,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableFooter,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TableSortLabel,
-  Typography,
-} from '@availity/element';
+import Container from '@mui/material/Container';
+import Paper from '@mui/material/Paper';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableFooter from '@mui/material/TableFooter';
+import TableHead from '@mui/material/TableHead';
+import TablePagination from '@mui/material/TablePagination';
+import TableRow from '@mui/material/TableRow';
+import TableSortLabel from '@mui/material/TableSortLabel';
+import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 import {
   getDisplayUsers,
@@ -60,7 +59,10 @@ export default function UserDashboardContent() {
           Hardcoded users dataset with client-side sorting and pagination.
         </Typography>
 
-        <TableContainer sx={{ border: 1, borderColor: 'primary.light', borderRadius: 2 }}>
+        <TableContainer
+          component={Paper}
+          sx={{ border: 1, borderColor: 'primary.light', borderRadius: 2 }}
+        >
           <Table aria-label="Users dashboard table" data-testid="users-table">
             <TableHead sx={{ backgroundColor: 'primary.main' }}>
               <TableRow>

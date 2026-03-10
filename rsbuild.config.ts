@@ -2,8 +2,6 @@ import { defineConfig } from '@rsbuild/core';
 import { pluginReact } from '@rsbuild/plugin-react';
 import { pluginReactRouter } from 'rsbuild-plugin-react-router';
 
-const apiPort = process.env.API_PORT ?? '3001';
-
 export default defineConfig({
   plugins: [pluginReactRouter(), pluginReact()],
   html: {
@@ -20,14 +18,12 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    host: '127.0.0.1',
     historyApiFallback: {
       index: '/entry.client.html',
     },
     proxy: {
-      '/api': {
-        target: `http://localhost:${apiPort}`,
-        changeOrigin: true,
-      },
+      '/api': 'http://127.0.0.1:3001',
     },
   },
 });

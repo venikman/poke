@@ -1,5 +1,6 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 import ClientThemeProvider from './components/ClientThemeProvider';
+import UserDashboardContent from './components/UserDashboardContent';
 
 export default function Root() {
   return (
@@ -19,5 +20,16 @@ export default function Root() {
         <Scripts />
       </body>
     </html>
+  );
+}
+
+export function HydrateFallback() {
+  return (
+    <>
+      <ClientThemeProvider>
+        <UserDashboardContent />
+      </ClientThemeProvider>
+      <Scripts />
+    </>
   );
 }

@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/aspire/">
+    <Project Path="aspire/Poke.AppHost/Poke.AppHost.csproj" />
+  </Folder>
+</Solution>

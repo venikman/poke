@@ -17,3 +17,5 @@ coverage/
 test-results/
 *.log
 .npmrc
+bin/
+obj/
