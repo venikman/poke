@@ -7,10 +7,18 @@ export default defineConfig({
     baseURL: 'http://localhost:5173',
     headless: true,
   },
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: process.env.CI !== 'true',
-    timeout: 120_000,
-  },
+  webServer: [
+    {
+      command: 'npx rsbuild dev',
+      url: 'http://localhost:5173',
+      reuseExistingServer: process.env.CI !== 'true',
+      timeout: 120_000,
+    },
+    {
+      command: 'PORT=3001 npx tsx --watch server/main.ts',
+      url: 'http://localhost:3001/api/v1/hello',
+      reuseExistingServer: process.env.CI !== 'true',
+      timeout: 120_000,
+    },
+  ],
 });

@@ -1,12 +1,29 @@
 import { StrictMode, startTransition } from 'react';
-import { hydrateRoot } from 'react-dom/client';
-import { HydratedRouter } from 'react-router/dom';
+import { createRoot } from 'react-dom/client';
+import { createBrowserRouter } from 'react-router';
+import { RouterProvider } from 'react-router/dom';
+import ClientThemeProvider from './components/ClientThemeProvider';
+import HomePage from './routes/home';
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <HomePage />,
+  },
+]);
 
 startTransition(() => {
-  hydrateRoot(
-    document,
+  const rootElement = document.getElementById('root');
+
+  if (!rootElement) {
+    throw new Error('Missing #root element');
+  }
+
+  createRoot(rootElement).render(
     <StrictMode>
-      <HydratedRouter />
+      <ClientThemeProvider>
+        <RouterProvider router={router} />
+      </ClientThemeProvider>
     </StrictMode>,
   );
 });

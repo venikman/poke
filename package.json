@@ -7,7 +7,7 @@
     "node": ">=24.13.0"
   },
   "scripts": {
-    "dev": "dotnet run --project aspire/Poke.AppHost",
+    "dev": "PORT=3001 tsx --watch server/main.ts & api=$!; trap 'kill $api 2>/dev/null' EXIT INT TERM; rsbuild dev",
     "build": "rsbuild build && tsc --project tsconfig.server.json",
     "start": "NODE_ENV=production node build/runtime/server/main.js",
     "test": "rstest --project api",
