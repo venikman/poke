@@ -8,7 +8,7 @@ export default defineConfig({
     {
       name: 'browser',
       globals: true,
-      include: ['app/**/*.browser.test.tsx'],
+      include: ['tests/browser/**/*.browser.test.tsx'],
       plugins: [pluginReact()],
       browser: {
         enabled: true,
@@ -21,7 +21,7 @@ export default defineConfig({
       name: 'api',
       globals: true,
       testEnvironment: 'node',
-      include: ['server/**/*.test.ts'],
+      include: ['tests/api/**/*.test.ts'],
     },
   ],
 });

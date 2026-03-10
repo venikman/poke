@@ -1,72 +1,63 @@
-# ExecPlan: TS Functional Blueprint Skill + Dashboard Domain Refactor
+# ExecPlan: Make Playwright Dev-Only
 ## Goal
-Create a reusable repo skill from the F#-inspired TypeScript article and apply it to the users dashboard domain model with strict red-green-refactor for the new domain behavior.
+Run Playwright E2E only against the development server flow and remove the production-mode branch from the Playwright config.
 
 ## Success criteria (observable)
-- Repo has a local skill at `.codex/skills/ts-functional-blueprint/SKILL.md` with actionable rules, prompt header, and review checklist.
-- Dashboard domain logic uses branded IDs, immutable records, and a discriminated-union sort state.
-- Sorting logic is implemented as pure functions with exhaustive `satisfies never` handling.
-- New automated test covers sort-state transitions and sorted output behavior.
-- Existing dashboard browser tests still pass.
-- `npm run test:browser` and `npm run check` pass.
+- `playwright.config.ts` only contains development-mode server wiring.
+- `npm run test:e2e` runs against `npm run dev` on `http://localhost:5173`.
+- No Playwright config code remains for `npm run build && npm run start`.
+- `npm run test`, `npm run test:e2e`, `npm run test:all`, and `npm run check` pass.
 
 ## Non-goals
-- No UI redesign.
-- No backend contract changes.
-- No dependency upgrades.
+- No changes to browser-test coverage.
+- No changes to production app runtime scripts.
+- No TypeScript config changes.
 
 ## Constraints (sandbox, network, OS, time, dependencies)
 - Sandbox: danger-full-access.
-- Network: enabled but not required.
-- OS: Linux container.
-- Tooling: npm, rstest, biome, TypeScript strict mode.
+- Network: not required.
+- OS: macOS local workspace.
+- Preserve unrelated in-progress worktree changes.
 
 ## Repo map (key files/dirs)
-- `app/components/UserDashboardContent.tsx`
-- `app/domain/*` (new)
-- `app/routes/home.browser.test.tsx`
-- `.codex/skills/ts-functional-blueprint/SKILL.md` (new)
-- `README.md`
+- `playwright.config.ts`
+- `package.json`
+- `tests/api/server/dev-ports.test.ts`
 
 ## Milestones
-1. Plan and red test setup
+1. Lock the target with a failing test
    - Steps
-     - Update this ExecPlan.
-     - Add a new failing browser test for domain sorting/state transitions.
-   - Validation: `npx rstest --project browser --include "app/domain/userDashboard.browser.test.tsx"`
-   - Expected signals: fails before implementation (red).
-   - Rollback: remove new test file.
+     - Assert Playwright uses dev-only wiring and no production branch.
+   - Validation: `npm run test`
+   - Expected signals: fails before implementation.
+   - Rollback: remove the new assertions.
 
-2. Implement functional domain model + wire component
+2. Simplify Playwright config to dev-only
    - Steps
-     - Add `app/domain/userDashboard.ts` with Brand, immutable user model, DU sort state, pure sort helpers.
-     - Refactor dashboard component to consume domain module.
+     - Remove the mode switch and production branch from `playwright.config.ts`.
+     - Keep `test:e2e` using default Playwright config discovery.
    - Validation:
-     - `npx rstest --project browser --include "app/domain/userDashboard.browser.test.tsx"`
-     - `npx rstest --project browser --include "app/routes/home.browser.test.tsx"`
-   - Expected signals: both pass (green).
-   - Rollback: revert domain and component edits.
+     - `npm run test`
+     - `npm run test:e2e`
+   - Expected signals: API tests and Playwright smoke test pass.
+   - Rollback: restore the dev/prod switch if validation fails.
 
-3. Skill + docs + regression
+3. Validate repo health
    - Steps
-     - Add `.codex/skills/ts-functional-blueprint/SKILL.md`.
-     - Add README pointer.
-     - Run browser tests and lint/type checks.
+     - Run the aggregate test path and lint/type checks.
    - Validation:
-     - `npm run test:browser`
+     - `npm run test:all`
      - `npm run check`
-   - Expected signals: pass.
-   - Rollback: revert docs/skill changes.
+   - Expected signals: all suites pass with dev-only Playwright.
+   - Rollback: revert the simplification if validation exposes regressions.
 
 ## Decisions log (why changes)
-- Keep domain logic separate from UI to preserve testability and composability.
-- Use `satisfies never` in DU switch defaults to force exhaustiveness at compile time.
-- Keep API unchanged; refactor is scoped to frontend domain modeling and team guidance.
+- The user wants the E2E path to validate only the dev-server experience.
+- One explicit dev-only config is simpler than carrying dead production-mode branching.
+- Production runtime validation remains available through build/start scripts and other checks, but no longer through Playwright.
 
 ## Progress log (ISO-8601 timestamps)
-- 2026-03-07T00:00:00Z: ExecPlan initialized. Next: add red test for domain sort-state behavior.
-
-- 2026-03-07T07:03:00Z: Milestone 1 complete. Added failing domain test (`app/domain/userDashboard.browser.test.tsx`) and observed RED due missing module.
-- 2026-03-07T07:07:00Z: Milestone 2 complete. Implemented `app/domain/userDashboard.ts` and refactored dashboard component to use DU sort-state + immutable domain model; domain tests GREEN.
-- 2026-03-07T07:10:00Z: Milestone 3 in progress. Added repo-local TS skill and README pointer; next run full browser + lint/type checks.
-- 2026-03-07T07:16:00Z: Milestone 3 complete. Added `.codex/skills/ts-functional-blueprint/SKILL.md`, updated README guidance, and validated `CI=true npm run test:browser` + `npm run check` both passing.
+- 2026-03-09T01:40:00Z: ExecPlan initialized for dev-only Playwright.
+- 2026-03-09T01:42:00Z: Milestone 1 complete. Added a failing API assertion that forbids Playwright production branching and requires dev-only wiring.
+- 2026-03-09T01:45:00Z: Milestone 2 complete. Removed the Playwright mode switch and production branch, leaving a single dev-only config.
+- 2026-03-09T01:49:00Z: Milestone 3 complete. `npm run test`, `npm run test:e2e`, `npm run test:all`, and `npm run check` all passed with dev-only Playwright.

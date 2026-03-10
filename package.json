@@ -10,13 +10,13 @@
     "dev": "API_PORT=${API_PORT:-3301} PORT=${API_PORT:-3301} npm run dev:api & API_PORT=${API_PORT:-3301} npm run dev:fe",
     "dev:fe": "rsbuild dev",
     "dev:api": "tsx --watch server/main.ts",
-    "build": "rsbuild build",
-    "start": "NODE_ENV=production tsx server/main.ts",
+    "build:client": "rsbuild build",
+    "build:server": "tsc --project tsconfig.server.json",
+    "build": "npm run build:client && npm run build:server",
+    "start": "NODE_ENV=production node build/runtime/server/main.js",
     "test": "rstest --project api",
     "test:browser": "rstest --project browser",
-    "test:e2e:dev": "playwright test e2e/dev-fe.spec.ts",
-    "test:e2e:prod": "playwright test --config playwright.prod.config.ts e2e/prod.spec.ts",
-    "test:e2e": "npm run test:e2e:dev && npm run test:e2e:prod",
+    "test:e2e": "playwright test",
     "test:all": "rstest --project api && rstest --project browser && npm run test:e2e",
     "test:watch": "rstest --watch",
     "test:coverage": "rstest --coverage",
@@ -35,8 +35,7 @@
     "hono": "^4.12.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "react-router": "^7.13.1",
-    "tsx": "^4.21.0"
+    "react-router": "^7.13.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.5",
@@ -51,6 +50,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "rsbuild-plugin-react-router": "^0.1.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }

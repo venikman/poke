@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { expectDashboardBehavior } from './dashboard.assertions';
 
-test('production mode serves dashboard view and hello api', async ({ page }) => {
+test('built app boots and renders the expected dashboard table', async ({ page }) => {
   const response = await page.goto('/');
 
   expect(response?.status()).toBe(200);
@@ -10,8 +10,7 @@ test('production mode serves dashboard view and hello api', async ({ page }) => 
 
   const apiResponse = await page.request.get('/api/v1/hello');
   expect(apiResponse.status()).toBe(200);
+
   const payload = (await apiResponse.json()) as { message: string };
-  expect(payload).toEqual({
-    message: 'Hello World from RS Stack',
-  });
+  expect(payload).toEqual({ message: 'Hello World from RS Stack' });
 });

@@ -1,10 +1,9 @@
 import { defineConfig } from '@playwright/test';
-import { getE2EApiPort } from './config/devPorts.js';
 
-const e2eApiPort = getE2EApiPort();
+const e2eApiPort = process.env.E2E_API_PORT ?? '3301';
 
 export default defineConfig({
-  testDir: './e2e',
+  testDir: './tests/e2e',
   timeout: 120_000,
   use: {
     baseURL: 'http://localhost:5173',

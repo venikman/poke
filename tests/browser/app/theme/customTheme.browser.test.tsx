@@ -1,4 +1,4 @@
-import { customTheme } from './customTheme';
+import { customTheme } from '../../../../app/theme/customTheme';
 
 test('uses custom brand palette', () => {
   expect(customTheme.palette.primary.main).toBe('#5EA908');

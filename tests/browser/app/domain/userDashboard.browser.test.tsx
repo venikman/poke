@@ -4,7 +4,7 @@ import {
   getNextSortState,
   USERS,
   type UserSortState,
-} from './userDashboard';
+} from '../../../../app/domain/userDashboard';
 
 const getFirstName = (state: UserSortState): string => getDisplayUsers(USERS, state)[0]?.name ?? '';
 

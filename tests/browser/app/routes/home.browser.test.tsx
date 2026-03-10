@@ -1,5 +1,5 @@
-import { renderWithTheme as render } from '../test/renderWithTheme';
-import Page from './home';
+import { renderWithTheme as render } from '../../support/renderWithTheme';
+import Page from '../../../../app/routes/home';
 
 const getRows = () => Array.from(document.querySelectorAll('[data-testid="user-row"]'));
 

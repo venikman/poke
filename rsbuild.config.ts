@@ -1,7 +1,8 @@
 import { defineConfig } from '@rsbuild/core';
 import { pluginReact } from '@rsbuild/plugin-react';
 import { pluginReactRouter } from 'rsbuild-plugin-react-router';
-import { getApiProxyTarget } from './config/devPorts.js';
+
+const apiPort = process.env.API_PORT ?? '3001';
 
 export default defineConfig({
   plugins: [pluginReactRouter(), pluginReact()],
@@ -24,7 +25,7 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: getApiProxyTarget(),
+        target: `http://localhost:${apiPort}`,
         changeOrigin: true,
       },
     },
