@@ -3,14 +3,54 @@ import {
   getInitialSortState,
   getNextSortState,
   USERS,
+  UserId,
+  type UserRow,
   type UserSortState,
 } from '../../../../app/domain/userDashboard';
 
-const getFirstName = (state: UserSortState): string => getDisplayUsers(USERS, state)[0]?.name ?? '';
+const getFirstName = (
+  state: UserSortState,
+  users: ReadonlyArray<UserRow> = USERS,
+): string => getDisplayUsers(users, state)[0]?.name ?? '';
 
-test('sort state cycles default -> name asc -> name desc', () => {
+const SORT_FIXTURE: ReadonlyArray<UserRow> = [
+  {
+    id: UserId('fixture-1'),
+    name: 'Mira Hart',
+    email: 'zeta@example.com',
+    role: 'Viewer',
+    status: 'Active',
+    lastActive: '2026-03-02',
+  },
+  {
+    id: UserId('fixture-2'),
+    name: 'Asha Bell',
+    email: 'beta@example.com',
+    role: 'Support',
+    status: 'Invited',
+    lastActive: '2026-03-04',
+  },
+  {
+    id: UserId('fixture-3'),
+    name: 'Zane Cole',
+    email: 'alpha@example.com',
+    role: 'Admin',
+    status: 'Suspended',
+    lastActive: '2026-03-01',
+  },
+  {
+    id: UserId('fixture-4'),
+    name: 'Bryn Dale',
+    email: 'gamma@example.com',
+    role: 'Editor',
+    status: 'Active',
+    lastActive: '2026-03-03',
+  },
+];
+
+test('initial sort state is name descending and toggles on repeated clicks', () => {
   const initial = getInitialSortState();
-  expect(initial.kind).toBe('default');
+  expect(initial).toEqual({ kind: 'sorted', key: 'name', order: 'desc' });
 
   const next = getNextSortState(initial, 'name');
   expect(next).toEqual({ kind: 'sorted', key: 'name', order: 'asc' });
@@ -19,9 +59,17 @@ test('sort state cycles default -> name asc -> name desc', () => {
   expect(toggled).toEqual({ kind: 'sorted', key: 'name', order: 'desc' });
 });
 
-test('default display is descending by name and sorted states are deterministic', () => {
-  const defaultState = getInitialSortState();
-  expect(getFirstName(defaultState)).toBe('Logan Reese');
+test('default display preserves the provided order while sorted states remain deterministic', () => {
+  const defaultState: UserSortState = { kind: 'default' };
+  expect(getDisplayUsers(SORT_FIXTURE, defaultState).map((user) => user.name)).toEqual([
+    'Mira Hart',
+    'Asha Bell',
+    'Zane Cole',
+    'Bryn Dale',
+  ]);
+
+  const initialState = getInitialSortState();
+  expect(getFirstName(initialState)).toBe('Logan Reese');
 
   const nameAscState: UserSortState = { kind: 'sorted', key: 'name', order: 'asc' };
   expect(getFirstName(nameAscState)).toBe('Avery Cole');
@@ -42,15 +90,27 @@ test('switching sort keys resets the order to ascending', () => {
 
 test('display sorting covers non-name keys', () => {
   const emailAscState: UserSortState = { kind: 'sorted', key: 'email', order: 'asc' };
-  expect(getFirstName(emailAscState)).toBe('Avery Cole');
+  expect(getDisplayUsers(SORT_FIXTURE, emailAscState).map((user) => user.email)).toEqual([
+    'alpha@example.com',
+    'beta@example.com',
+    'gamma@example.com',
+    'zeta@example.com',
+  ]);
 
   const roleAscState: UserSortState = { kind: 'sorted', key: 'role', order: 'asc' };
-  expect(getFirstName(roleAscState)).toBe('Avery Cole');
+  expect(getDisplayUsers(SORT_FIXTURE, roleAscState).map((user) => user.role)).toEqual([
+    'Admin',
+    'Editor',
+    'Support',
+    'Viewer',
+  ]);
 
   const lastActiveDescState: UserSortState = {
     kind: 'sorted',
     key: 'lastActive',
     order: 'desc',
   };
-  expect(getFirstName(lastActiveDescState)).toBe('Avery Cole');
+  expect(getDisplayUsers(SORT_FIXTURE, lastActiveDescState).map((user) => user.lastActive)).toEqual(
+    ['2026-03-04', '2026-03-03', '2026-03-02', '2026-03-01'],
+  );
 });

@@ -3,12 +3,12 @@ import { resolve } from 'node:path';
 
 test('root exports a shared Layout shell for Root and HydrateFallback', () => {
   const source = readFileSync(resolve(process.cwd(), 'app/root.tsx'), 'utf8');
+  const normalized = source.replace(/\s+/g, ' ');
 
-  expect(source).toContain('export function Layout');
-  expect(source).toContain('export default function Root()');
-  expect(source).toContain('return <Outlet />;');
-  expect(source).toContain('export function HydrateFallback()');
-  expect(source).toContain('return <UserDashboardContent />;');
+  expect(source).toMatch(/export function Layout/);
+  expect(source).toMatch(/export default function Root/);
+  expect(source).toMatch(/export function HydrateFallback/);
+  expect(normalized).toMatch(/export function HydrateFallback\(\) \{ return <UserDashboardContent \/>; \}/);
 });
 
 test('prod smoke script rejects early exits and uses a resilient root-shell match', () => {

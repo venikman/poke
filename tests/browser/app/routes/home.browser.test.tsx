@@ -165,7 +165,7 @@ test('exposes aria-sort on the active header cell', async () => {
   const nameHeader = sortName?.closest('th');
 
   expect(sortName).not.toBeNull();
-  expect(nameHeader?.getAttribute('aria-sort')).toBeNull();
+  expect(nameHeader?.getAttribute('aria-sort')).toBe('descending');
 
   sortName?.click();
   await waitForFirstRowName('Avery Cole');

@@ -73,7 +73,11 @@ export const USERS: ReadonlyArray<UserRow> = [
   userRow('u-012', 'Logan Reese', 'logan.reese@example.com', 'Viewer', 'Suspended', '2026-02-18'),
 ];
 
-export const getInitialSortState = (): UserSortState => ({ kind: 'default' });
+export const getInitialSortState = (): UserSortState => ({
+  kind: 'sorted',
+  key: 'name',
+  order: 'desc',
+});
 
 export const getNextSortState = (
   current: UserSortState,
@@ -85,9 +89,6 @@ export const getNextSortState = (
 
   return { kind: 'sorted', key: nextSortKey, order: 'asc' };
 };
-
-const sortByNameDesc = (users: ReadonlyArray<UserRow>): ReadonlyArray<UserRow> =>
-  [...users].sort((left, right) => right.name.localeCompare(left.name));
 
 const sortByKeyAsc = (users: ReadonlyArray<UserRow>, key: UserSortKey): ReadonlyArray<UserRow> =>
   [...users].sort((left, right) => left[key].localeCompare(right[key]));
@@ -102,7 +103,7 @@ export const getDisplayUsers = (
 ): ReadonlyArray<UserRow> => {
   switch (state.kind) {
     case 'default':
-      return sortByNameDesc(users);
+      return users;
     case 'sorted': {
       const sorted = sortByKeyAsc(users, state.key);
       return state.order === 'desc' ? [...sorted].reverse() : sorted;
