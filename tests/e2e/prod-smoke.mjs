@@ -75,11 +75,7 @@ try {
     new Promise((_, reject) => {
       server.once('error', reject);
       server.once('exit', (code) => {
-        if (code === 0 || code === null) {
-          return;
-        }
-
-        reject(new Error(`npm run start exited early with code ${code}.`));
+        reject(new Error(`npm run start exited early with code ${code ?? 'unknown'}.`));
       });
     }),
   ]);
@@ -87,7 +83,7 @@ try {
   const rootResponse = await serverReadyOrFailed;
   const rootHtml = await rootResponse.text();
 
-  if (!rootHtml.includes('<div id="root">')) {
+  if (!/<div\b[^>]*\bid=['"]root['"]/.test(rootHtml)) {
     throw new Error('Production root response did not return the client app shell.');
   }
 

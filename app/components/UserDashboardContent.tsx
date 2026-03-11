@@ -1,4 +1,5 @@
 import Container from '@mui/material/Container';
+import type { IconButtonProps } from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -20,6 +21,11 @@ import {
   type UserSortState,
 } from '../domain/userDashboard';
 
+const paginationActionSlotProps = {
+  nextButton: { 'data-testid': 'users-pagination-next' } as Partial<IconButtonProps>,
+  previousButton: { 'data-testid': 'users-pagination-previous' } as Partial<IconButtonProps>,
+};
+
 export default function UserDashboardContent() {
   const [sortState, setSortState] = useState<UserSortState>(getInitialSortState);
   const [page, setPage] = useState(0);
@@ -34,8 +40,12 @@ export default function UserDashboardContent() {
   };
 
   const handleSortChange = (nextSortKey: UserSortKey) => {
+    const shouldResetPage = sortState.kind !== 'sorted' || sortState.key !== nextSortKey;
+
     setSortState((currentSortState) => getNextSortState(currentSortState, nextSortKey));
-    setPage(0);
+    if (shouldResetPage) {
+      setPage(0);
+    }
   };
 
   const isSortedBy = (key: UserSortKey): boolean =>
@@ -66,7 +76,10 @@ export default function UserDashboardContent() {
           <Table aria-label="Users dashboard table" data-testid="users-table">
             <TableHead sx={{ backgroundColor: 'primary.main' }}>
               <TableRow>
-                <TableCell sx={{ color: 'primary.contrastText' }}>
+                <TableCell
+                  sortDirection={isSortedBy('name') ? getSortDirection('name') : false}
+                  sx={{ color: 'primary.contrastText' }}
+                >
                   <TableSortLabel
                     active={isSortedBy('name')}
                     data-testid="sort-name"
@@ -77,7 +90,10 @@ export default function UserDashboardContent() {
                     Name
                   </TableSortLabel>
                 </TableCell>
-                <TableCell sx={{ color: 'primary.contrastText' }}>
+                <TableCell
+                  sortDirection={isSortedBy('email') ? getSortDirection('email') : false}
+                  sx={{ color: 'primary.contrastText' }}
+                >
                   <TableSortLabel
                     active={isSortedBy('email')}
                     data-testid="sort-email"
@@ -88,7 +104,10 @@ export default function UserDashboardContent() {
                     Email
                   </TableSortLabel>
                 </TableCell>
-                <TableCell sx={{ color: 'primary.contrastText' }}>
+                <TableCell
+                  sortDirection={isSortedBy('role') ? getSortDirection('role') : false}
+                  sx={{ color: 'primary.contrastText' }}
+                >
                   <TableSortLabel
                     active={isSortedBy('role')}
                     data-testid="sort-role"
@@ -100,7 +119,10 @@ export default function UserDashboardContent() {
                   </TableSortLabel>
                 </TableCell>
                 <TableCell sx={{ color: 'primary.contrastText' }}>Status</TableCell>
-                <TableCell sx={{ color: 'primary.contrastText' }}>
+                <TableCell
+                  sortDirection={isSortedBy('lastActive') ? getSortDirection('lastActive') : false}
+                  sx={{ color: 'primary.contrastText' }}
+                >
                   <TableSortLabel
                     active={isSortedBy('lastActive')}
                     data-testid="sort-lastActive"
@@ -137,6 +159,7 @@ export default function UserDashboardContent() {
                   page={page}
                   rowsPerPage={rowsPerPage}
                   rowsPerPageOptions={[5, 10, 25]}
+                  slotProps={{ actions: paginationActionSlotProps }}
                 />
               </TableRow>
             </TableFooter>

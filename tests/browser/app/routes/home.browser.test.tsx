@@ -65,11 +65,8 @@ const waitForDashboardMount = (timeout = 3000): Promise<void> =>
     timeout,
   ).then(() => undefined);
 
-const getPaginationButton = (container: Element | null, label: string): HTMLButtonElement | undefined =>
-  Array.from(container?.querySelectorAll('button') ?? []).find(
-    (button) =>
-      button.getAttribute('aria-label') === label || button.getAttribute('title') === label,
-  ) as HTMLButtonElement | undefined;
+const getPaginationButton = (testId: string): HTMLButtonElement | null =>
+  document.querySelector(`[data-testid="${testId}"]`) as HTMLButtonElement | null;
 
 test('renders dashboard table immediately on first render', async () => {
   await render(<Page />);
@@ -160,20 +157,78 @@ test('sorts by name descending on second click', async () => {
   expect(getFirstRowName()).toBe('Logan Reese');
 });
 
+test('exposes aria-sort on the active header cell', async () => {
+  await render(<Page />);
+  await waitForDashboardMount();
+
+  const sortName = document.querySelector('[data-testid="sort-name"]') as HTMLButtonElement | null;
+  const nameHeader = sortName?.closest('th');
+
+  expect(sortName).not.toBeNull();
+  expect(nameHeader?.getAttribute('aria-sort')).toBeNull();
+
+  sortName?.click();
+  await waitForFirstRowName('Avery Cole');
+  expect(nameHeader?.getAttribute('aria-sort')).toBe('ascending');
+
+  sortName?.click();
+  await waitForFirstRowName('Logan Reese');
+  expect(nameHeader?.getAttribute('aria-sort')).toBe('descending');
+});
+
 test('navigates to page 2 and shows next rows', async () => {
   await render(<Page />);
   await waitForDashboardMount();
 
-  const pagination = document.querySelector('[data-testid="users-pagination"]');
-  expect(pagination).not.toBeNull();
+  const nextPageButton = getPaginationButton('users-pagination-next');
 
-  const nextPageButton = getPaginationButton(pagination, 'Go to next page');
-
-  expect(nextPageButton).not.toBeUndefined();
+  expect(nextPageButton).not.toBeNull();
   nextPageButton?.click();
 
   await waitForFirstRowName('Gray Kim');
   expect(getFirstRowName()).toBe('Gray Kim');
+});
+
+test('keeps the current page when toggling sort direction on the same column', async () => {
+  await render(<Page />);
+  await waitForDashboardMount();
+
+  const sortName = document.querySelector('[data-testid="sort-name"]') as HTMLButtonElement | null;
+
+  expect(sortName).not.toBeNull();
+  sortName?.click();
+  await waitForFirstRowName('Avery Cole');
+
+  const nextPageButton = getPaginationButton('users-pagination-next');
+  expect(nextPageButton).not.toBeNull();
+  nextPageButton?.click();
+  await waitForFirstRowName('Finley Brooks');
+
+  sortName?.click();
+  await waitForFirstRowName('Gray Kim');
+  expect(getFirstRowName()).toBe('Gray Kim');
+});
+
+test('resets to the first page when changing the sort key', async () => {
+  await render(<Page />);
+  await waitForDashboardMount();
+
+  const sortName = document.querySelector('[data-testid="sort-name"]') as HTMLButtonElement | null;
+  const sortEmail = document.querySelector('[data-testid="sort-email"]') as HTMLButtonElement | null;
+
+  expect(sortName).not.toBeNull();
+  expect(sortEmail).not.toBeNull();
+  sortName?.click();
+  await waitForFirstRowName('Avery Cole');
+
+  const nextPageButton = getPaginationButton('users-pagination-next');
+  expect(nextPageButton).not.toBeNull();
+  nextPageButton?.click();
+  await waitForFirstRowName('Finley Brooks');
+
+  sortEmail?.click();
+  await waitForFirstRowName('Avery Cole');
+  expect(getFirstRowName()).toBe('Avery Cole');
 });
 
 test('changes rows per page to 10 and resets to first page', async () => {
@@ -183,8 +238,8 @@ test('changes rows per page to 10 and resets to first page', async () => {
   const pagination = document.querySelector('[data-testid="users-pagination"]');
   expect(pagination).not.toBeNull();
 
-  const nextPageButton = getPaginationButton(pagination, 'Go to next page');
-  expect(nextPageButton).not.toBeUndefined();
+  const nextPageButton = getPaginationButton('users-pagination-next');
+  expect(nextPageButton).not.toBeNull();
   nextPageButton?.click();
   await waitForFirstRowName('Gray Kim');
 

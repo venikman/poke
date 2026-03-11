@@ -92,6 +92,10 @@ const sortByNameDesc = (users: ReadonlyArray<UserRow>): ReadonlyArray<UserRow> =
 const sortByKeyAsc = (users: ReadonlyArray<UserRow>, key: UserSortKey): ReadonlyArray<UserRow> =>
   [...users].sort((left, right) => left[key].localeCompare(right[key]));
 
+const unreachableSortState = (state: never): never => {
+  throw new Error(`Unhandled sort state: ${JSON.stringify(state as unknown)}`);
+};
+
 export const getDisplayUsers = (
   users: ReadonlyArray<UserRow>,
   state: UserSortState,
@@ -104,6 +108,6 @@ export const getDisplayUsers = (
       return state.order === 'desc' ? [...sorted].reverse() : sorted;
     }
     default:
-      throw new Error(`Unhandled sort state: ${state satisfies never}`);
+      return unreachableSortState(state);
   }
 };
