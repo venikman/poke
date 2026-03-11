@@ -1,4 +1,4 @@
-import { helloRoutes } from './hello.js';
+import { helloRoutes } from '../../../../server/routes/hello.js';
 
 test('GET /hello returns Hello World payload', async () => {
   const response = await helloRoutes.request('http://localhost/hello');

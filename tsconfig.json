@@ -10,5 +10,13 @@
     "skipLibCheck": true,
     "types": ["node", "@rstest/core/globals"]
   },
-  "include": ["app", "server", "mock", "rsbuild.config.ts", "rstest.config.ts", "react-router.config.ts"]
+  "include": [
+    "app",
+    "server",
+    "tests",
+    "rsbuild.config.ts",
+    "rstest.config.ts",
+    "react-router.config.ts",
+    "playwright.config.ts"
+  ]
 }

@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 import ClientThemeProvider from './components/ClientThemeProvider';
+import UserDashboardContent from './components/UserDashboardContent';
 
-export default function Root() {
+export function Layout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
@@ -12,12 +14,18 @@ export default function Root() {
         <title>User Dashboard</title>
       </head>
       <body>
-        <ClientThemeProvider>
-          <Outlet />
-        </ClientThemeProvider>
+        <ClientThemeProvider>{children}</ClientThemeProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
     </html>
   );
+}
+
+export default function Root() {
+  return <Outlet />;
+}
+
+export function HydrateFallback() {
+  return <UserDashboardContent />;
 }

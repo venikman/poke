@@ -1,141 +1,37 @@
-import {
-  Container,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableFooter,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TableSortLabel,
-  Typography,
-} from '@availity/element';
+import Container from '@mui/material/Container';
+import type { IconButtonProps } from '@mui/material/IconButton';
+import Paper from '@mui/material/Paper';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableFooter from '@mui/material/TableFooter';
+import TableHead from '@mui/material/TableHead';
+import TablePagination from '@mui/material/TablePagination';
+import TableRow from '@mui/material/TableRow';
+import TableSortLabel from '@mui/material/TableSortLabel';
+import Typography from '@mui/material/Typography';
 import { useState } from 'react';
+import {
+  getDisplayUsers,
+  getInitialSortState,
+  getNextSortState,
+  USERS,
+  type UserSortKey,
+  type UserSortState,
+} from '../domain/userDashboard';
 
-type UserRow = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  status: 'Active' | 'Invited' | 'Suspended';
-  lastActive: string;
+const paginationActionSlotProps = {
+  nextButton: { 'data-testid': 'users-pagination-next' } as Partial<IconButtonProps>,
+  previousButton: { 'data-testid': 'users-pagination-previous' } as Partial<IconButtonProps>,
 };
 
-type SortKey = 'name' | 'email' | 'role' | 'lastActive';
-type SortOrder = 'asc' | 'desc';
-
-const USERS: UserRow[] = [
-  {
-    id: 'u-001',
-    name: 'Avery Cole',
-    email: 'avery.cole@example.com',
-    role: 'Admin',
-    status: 'Active',
-    lastActive: '2026-03-01',
-  },
-  {
-    id: 'u-002',
-    name: 'Blake Jordan',
-    email: 'blake.jordan@example.com',
-    role: 'Manager',
-    status: 'Invited',
-    lastActive: '2026-02-28',
-  },
-  {
-    id: 'u-003',
-    name: 'Casey Rivera',
-    email: 'casey.rivera@example.com',
-    role: 'Support',
-    status: 'Active',
-    lastActive: '2026-02-27',
-  },
-  {
-    id: 'u-004',
-    name: 'Dakota Morgan',
-    email: 'dakota.morgan@example.com',
-    role: 'Viewer',
-    status: 'Suspended',
-    lastActive: '2026-02-26',
-  },
-  {
-    id: 'u-005',
-    name: 'Elliot Shah',
-    email: 'elliot.shah@example.com',
-    role: 'Editor',
-    status: 'Active',
-    lastActive: '2026-02-25',
-  },
-  {
-    id: 'u-006',
-    name: 'Finley Brooks',
-    email: 'finley.brooks@example.com',
-    role: 'Manager',
-    status: 'Invited',
-    lastActive: '2026-02-24',
-  },
-  {
-    id: 'u-007',
-    name: 'Gray Kim',
-    email: 'gray.kim@example.com',
-    role: 'Support',
-    status: 'Active',
-    lastActive: '2026-02-23',
-  },
-  {
-    id: 'u-008',
-    name: 'Harper Lane',
-    email: 'harper.lane@example.com',
-    role: 'Editor',
-    status: 'Suspended',
-    lastActive: '2026-02-22',
-  },
-  {
-    id: 'u-009',
-    name: 'Indigo Patel',
-    email: 'indigo.patel@example.com',
-    role: 'Viewer',
-    status: 'Active',
-    lastActive: '2026-02-21',
-  },
-  {
-    id: 'u-010',
-    name: 'Jules Carter',
-    email: 'jules.carter@example.com',
-    role: 'Admin',
-    status: 'Invited',
-    lastActive: '2026-02-20',
-  },
-  {
-    id: 'u-011',
-    name: 'Kai Bennett',
-    email: 'kai.bennett@example.com',
-    role: 'Support',
-    status: 'Active',
-    lastActive: '2026-02-19',
-  },
-  {
-    id: 'u-012',
-    name: 'Logan Reese',
-    email: 'logan.reese@example.com',
-    role: 'Viewer',
-    status: 'Suspended',
-    lastActive: '2026-02-18',
-  },
-];
-
 export default function UserDashboardContent() {
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [sortState, setSortState] = useState<UserSortState>(getInitialSortState);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
-  const defaultUsers = [...USERS].sort((a, b) => b.name.localeCompare(a.name));
-  const sortedUsers = sortKey
-    ? [...USERS].sort((a, b) => a[sortKey].localeCompare(b[sortKey]))
-    : defaultUsers;
-
-  const displayUsers = sortKey && sortOrder === 'desc' ? [...sortedUsers].reverse() : sortedUsers;
+  const displayUsers = getDisplayUsers(USERS, sortState);
   const visibleRows = displayUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   const handleRowsPerPageChange = (nextRowsPerPage: number) => {
@@ -143,15 +39,24 @@ export default function UserDashboardContent() {
     setPage(0);
   };
 
-  const handleSortChange = (nextSortKey: SortKey) => {
-    if (sortKey === nextSortKey) {
-      setSortOrder((currentSortOrder) => (currentSortOrder === 'asc' ? 'desc' : 'asc'));
-      return;
+  const handleSortChange = (nextSortKey: UserSortKey) => {
+    const shouldResetPage = sortState.kind !== 'sorted' || sortState.key !== nextSortKey;
+
+    setSortState((currentSortState) => getNextSortState(currentSortState, nextSortKey));
+    if (shouldResetPage) {
+      setPage(0);
+    }
+  };
+
+  const isSortedBy = (key: UserSortKey): boolean =>
+    sortState.kind === 'sorted' && sortState.key === key;
+
+  const getSortDirection = (key: UserSortKey): 'asc' | 'desc' => {
+    if (sortState.kind !== 'sorted' || sortState.key !== key) {
+      return 'asc';
     }
 
-    setSortKey(nextSortKey);
-    setSortOrder('asc');
-    setPage(0);
+    return sortState.order;
   };
 
   return (
@@ -164,37 +69,49 @@ export default function UserDashboardContent() {
           Hardcoded users dataset with client-side sorting and pagination.
         </Typography>
 
-        <TableContainer sx={{ border: 1, borderColor: 'primary.light', borderRadius: 2 }}>
+        <TableContainer
+          component={Paper}
+          sx={{ border: 1, borderColor: 'primary.light', borderRadius: 2 }}
+        >
           <Table aria-label="Users dashboard table" data-testid="users-table">
             <TableHead sx={{ backgroundColor: 'primary.main' }}>
               <TableRow>
-                <TableCell sx={{ color: 'primary.contrastText' }}>
+                <TableCell
+                  sortDirection={isSortedBy('name') ? getSortDirection('name') : false}
+                  sx={{ color: 'primary.contrastText' }}
+                >
                   <TableSortLabel
-                    active={sortKey === 'name'}
+                    active={isSortedBy('name')}
                     data-testid="sort-name"
-                    direction={sortKey === 'name' ? sortOrder : 'asc'}
+                    direction={getSortDirection('name')}
                     onClick={() => handleSortChange('name')}
                     sx={{ color: 'inherit', '&.Mui-active': { color: 'inherit' } }}
                   >
                     Name
                   </TableSortLabel>
                 </TableCell>
-                <TableCell sx={{ color: 'primary.contrastText' }}>
+                <TableCell
+                  sortDirection={isSortedBy('email') ? getSortDirection('email') : false}
+                  sx={{ color: 'primary.contrastText' }}
+                >
                   <TableSortLabel
-                    active={sortKey === 'email'}
+                    active={isSortedBy('email')}
                     data-testid="sort-email"
-                    direction={sortKey === 'email' ? sortOrder : 'asc'}
+                    direction={getSortDirection('email')}
                     onClick={() => handleSortChange('email')}
                     sx={{ color: 'inherit', '&.Mui-active': { color: 'inherit' } }}
                   >
                     Email
                   </TableSortLabel>
                 </TableCell>
-                <TableCell sx={{ color: 'primary.contrastText' }}>
+                <TableCell
+                  sortDirection={isSortedBy('role') ? getSortDirection('role') : false}
+                  sx={{ color: 'primary.contrastText' }}
+                >
                   <TableSortLabel
-                    active={sortKey === 'role'}
+                    active={isSortedBy('role')}
                     data-testid="sort-role"
-                    direction={sortKey === 'role' ? sortOrder : 'asc'}
+                    direction={getSortDirection('role')}
                     onClick={() => handleSortChange('role')}
                     sx={{ color: 'inherit', '&.Mui-active': { color: 'inherit' } }}
                   >
@@ -202,11 +119,14 @@ export default function UserDashboardContent() {
                   </TableSortLabel>
                 </TableCell>
                 <TableCell sx={{ color: 'primary.contrastText' }}>Status</TableCell>
-                <TableCell sx={{ color: 'primary.contrastText' }}>
+                <TableCell
+                  sortDirection={isSortedBy('lastActive') ? getSortDirection('lastActive') : false}
+                  sx={{ color: 'primary.contrastText' }}
+                >
                   <TableSortLabel
-                    active={sortKey === 'lastActive'}
+                    active={isSortedBy('lastActive')}
                     data-testid="sort-lastActive"
-                    direction={sortKey === 'lastActive' ? sortOrder : 'asc'}
+                    direction={getSortDirection('lastActive')}
                     onClick={() => handleSortChange('lastActive')}
                     sx={{ color: 'inherit', '&.Mui-active': { color: 'inherit' } }}
                   >
@@ -239,6 +159,7 @@ export default function UserDashboardContent() {
                   page={page}
                   rowsPerPage={rowsPerPage}
                   rowsPerPageOptions={[5, 10, 25]}
+                  slotProps={{ actions: paginationActionSlotProps }}
                 />
               </TableRow>
             </TableFooter>

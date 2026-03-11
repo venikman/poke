@@ -1,17 +1,23 @@
 /**
  * Hono API server with security hardening (Node.js runtime).
  * - Serves API routes at /api/v1/*
- * - In production, also serves static files from dist/
+ * - In production, serves built static files from build/client
  */
 
-import { serve } from '@hono/node-server';
+import { type HttpBindings, serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
-import { type Context, Hono } from 'hono';
+import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
 import { helloRoutes } from './routes/hello.js';
 
-const app = new Hono();
+type AppBindings = {
+  Bindings: HttpBindings;
+};
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+const app = new Hono<AppBindings>();
 
 // Security middleware
 app.use('*', secureHeaders());
@@ -30,7 +36,7 @@ const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT = 100;
 const WINDOW_MS = 60 * 1000;
 
-app.use('/api/*', async (c: Context, next) => {
+app.use('/api/*', async (c, next) => {
   const ip = c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown';
   const now = Date.now();
   const record = rateLimitMap.get(ip);
@@ -50,7 +56,7 @@ app.use('/api/*', async (c: Context, next) => {
 app.route('/api/v1', helloRoutes);
 
 // Production: serve static files
-if (process.env.NODE_ENV === 'production') {
+if (isProduction) {
   // Serve static build assets directly.
   app.use('/static/*', serveStatic({ root: './build/client' }));
   // SPA fallback - serve client entry for all app routes.
@@ -58,7 +64,6 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const port = parseInt(process.env.PORT || '3001', 10);
-
 serve({ fetch: app.fetch, port }, () => {
   console.log(`Server running on http://localhost:${port}`);
   console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
